@@ -2,7 +2,7 @@ import type { TeamSummary, FpiSummary } from '@/lib/espn'
 
 function StatTile({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-[var(--border-hairline)] bg-[var(--surface-1)] p-3">
+    <div className="rounded-lg border border-[var(--border-hairline)] bg-[var(--surface-1)] p-3 shadow-[var(--shadow-card)]">
       <p className="text-xs text-[var(--text-muted)]">{label}</p>
       <p className="text-lg font-semibold">{value}</p>
     </div>

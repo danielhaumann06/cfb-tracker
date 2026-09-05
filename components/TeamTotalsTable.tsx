@@ -5,7 +5,7 @@ export function TeamTotalsTable({ teams }: { teams: TeamBoxscore[] }) {
   if (!teamA || !teamB) return null
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-[var(--border-hairline)]">
+    <div className="overflow-x-auto rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] shadow-[var(--shadow-card)]">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-[var(--gridline)] text-left">

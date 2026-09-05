@@ -11,7 +11,7 @@ export function PlayoffOddsTracker({ teams }: { teams: PlayoffOddsRow[] }) {
   )
 
   return (
-    <section className="rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-5">
+    <section className="rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-5 shadow-[var(--shadow-card)]">
       <h2 className="font-semibold">Playoff Odds</h2>
       <p className="text-sm text-[var(--text-muted)]">
         ESPN FPI chance of making the College Football Playoff

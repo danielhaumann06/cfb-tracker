@@ -46,7 +46,7 @@ export function LiveGameStats({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3 rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-4">
+      <div className="flex items-center gap-3 rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-4 shadow-[var(--shadow-card)]">
         {!status.completed && (
           <span className="rounded-full bg-[var(--seq-fill)] px-2 py-0.5 text-xs font-semibold text-white">
             LIVE

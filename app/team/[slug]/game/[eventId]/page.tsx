@@ -48,7 +48,7 @@ export default async function GamePage({
           />
         ) : (
           <div className="space-y-6">
-            <div className="flex items-center gap-3 rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-4">
+            <div className="flex items-center gap-3 rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-4 shadow-[var(--shadow-card)]">
               <span className="font-medium">
                 {status.away.name} {status.away.score} — {status.home.name}{' '}
                 {status.home.score}

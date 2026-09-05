@@ -35,7 +35,7 @@ export function TeamCard({
   return (
     <Link
       href={`/team/${slug}`}
-      className="block rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-5 transition hover:border-[var(--seq-fill)]"
+      className="block rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-5 shadow-[var(--shadow-card)] transition duration-200 hover:-translate-y-0.5 hover:border-[var(--seq-fill)] hover:shadow-[var(--shadow-card-hover)]"
     >
       <div className="flex items-center gap-3">
         {team.logo && (

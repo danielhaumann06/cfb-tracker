@@ -82,7 +82,7 @@ export function PlayerStatsSection({ team }: { team: TeamPlayerStats }) {
   )
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-4 shadow-[var(--shadow-card)]">
       <h3 className="font-semibold">{team.teamName}</h3>
       <StatGroup title="Offense" categories={offense} />
       <StatGroup title="Defense" categories={defense} />
