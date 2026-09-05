@@ -51,12 +51,14 @@ export default async function Home() {
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-      <h1 className="text-2xl font-semibold">College Football Tracker</h1>
-      <p className="mt-1 text-[var(--text-secondary)]">
-        {teams.length
-          ? `${teams.map(({ team }) => team.name).join(', ')} at a glance.`
-          : 'No teams tracked yet — add one below.'}
-      </p>
+      <h1 className="font-[family-name:var(--font-display)] text-5xl tracking-wide text-[var(--foreground)] sm:text-6xl">
+        College Football Tracker
+      </h1>
+      {teams.length === 0 && (
+        <p className="mt-1 text-[var(--text-secondary)]">
+          No teams tracked yet — add one below.
+        </p>
+      )}
 
       {teams.length > 0 && (
         <>
