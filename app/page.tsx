@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers'
+import Image from 'next/image'
 import { TeamCard } from '@/components/TeamCard'
 import { PlayoffOddsTracker } from '@/components/PlayoffOddsTracker'
 import { ManageTeamsPanel } from '@/components/ManageTeamsPanel'
@@ -51,8 +52,25 @@ export default async function Home() {
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-      <h1 className="font-[family-name:var(--font-display)] text-5xl tracking-wide text-[var(--foreground)] sm:text-6xl">
-        College Football Tracker
+      <h1 className="max-w-md sm:max-w-lg">
+        <Image
+          src="/api/wordmark/light"
+          alt="College Football Tracker"
+          width={1560}
+          height={220}
+          unoptimized
+          priority
+          className="h-auto w-full dark:hidden"
+        />
+        <Image
+          src="/api/wordmark/dark"
+          alt="College Football Tracker"
+          width={1560}
+          height={220}
+          unoptimized
+          priority
+          className="hidden h-auto w-full dark:block"
+        />
       </h1>
       {teams.length === 0 && (
         <p className="mt-1 text-[var(--text-secondary)]">
