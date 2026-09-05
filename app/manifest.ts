@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'College Football Tracker',
     short_name: 'CFB Tracker',
     description:
-      'Records, schedules, spreads, FPI, and playoff odds for Nebraska, Oregon, Alabama, and Georgia Tech.',
+      'Records, schedules, spreads, FPI, and playoff odds for your tracked college football teams.',
     start_url: '/',
     display: 'standalone',
     background_color: '#fcfcfb',

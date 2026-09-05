@@ -8,6 +8,7 @@ export const DEFAULT_TEAMS: TrackedTeam[] = [
   { id: '2483', slug: 'oregon-ducks' },
   { id: '333', slug: 'alabama-crimson-tide' },
   { id: '59', slug: 'georgia-tech-yellow-jackets' },
+  { id: '38', slug: 'colorado-buffaloes' },
 ]
 
 const TRACKED_TEAMS_COOKIE = 'tracked_teams'
