@@ -58,7 +58,7 @@ export default async function TeamPage({
 
       <section className="mt-6">
         <h2 className="mb-3 font-semibold">Schedule</h2>
-        <ScheduleTable teamId={team.id} games={schedule} />
+        <ScheduleTable slug={slug} teamId={team.id} games={schedule} />
       </section>
     </main>
   )

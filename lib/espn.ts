@@ -211,6 +211,82 @@ export async function getFpiSummary(espnId: string): Promise<FpiSummary | null> 
   }
 }
 
+export interface TeamBoxscore {
+  teamId: string
+  teamName: string
+  stats: { name: string; label: string; displayValue: string }[]
+}
+
+export interface PlayerCategory {
+  name: string
+  labels: string[]
+  rows: { playerId: string; name: string; values: string[] }[]
+}
+
+export interface TeamPlayerStats {
+  teamId: string
+  teamName: string
+  categories: PlayerCategory[]
+}
+
+export interface GameBoxscore {
+  teams: TeamBoxscore[]
+  players: TeamPlayerStats[]
+}
+
+const OFFENSE_CATEGORIES = ['passing', 'rushing', 'receiving', 'fumbles']
+const DEFENSE_CATEGORIES = ['defensive', 'interceptions']
+const SPECIAL_TEAMS_CATEGORIES = ['kicking', 'punting', 'kickReturns', 'puntReturns']
+
+export function groupPlayerCategories(categories: PlayerCategory[]) {
+  return {
+    offense: categories.filter((c) => OFFENSE_CATEGORIES.includes(c.name)),
+    defense: categories.filter((c) => DEFENSE_CATEGORIES.includes(c.name)),
+    specialTeams: categories.filter((c) =>
+      SPECIAL_TEAMS_CATEGORIES.includes(c.name)
+    ),
+  }
+}
+
+export async function getGameBoxscore(
+  eventId: string
+): Promise<GameBoxscore | null> {
+  const res = await fetch(`${SITE_BASE}/summary?event=${eventId}`, {
+    next: { revalidate: 30 },
+  })
+  const data = await res.json()
+  const boxscore = data.boxscore
+  if (!boxscore?.teams?.length) return null
+
+  const teams: TeamBoxscore[] = boxscore.teams.map((entry: any) => ({
+    teamId: entry.team.id,
+    teamName: entry.team.displayName,
+    stats: entry.statistics.map((s: any) => ({
+      name: s.name,
+      label: s.label,
+      displayValue: s.displayValue,
+    })),
+  }))
+
+  const players: TeamPlayerStats[] = (boxscore.players ?? []).map(
+    (entry: any) => ({
+      teamId: entry.team.id,
+      teamName: entry.team.displayName,
+      categories: entry.statistics.map((cat: any) => ({
+        name: cat.name,
+        labels: cat.labels,
+        rows: (cat.athletes ?? []).map((a: any) => ({
+          playerId: a.athlete.id,
+          name: a.athlete.displayName,
+          values: a.stats,
+        })),
+      })),
+    })
+  )
+
+  return { teams, players }
+}
+
 export function nextGame(schedule: GameSummary[]): GameSummary | null {
   const now = Date.now()
   const inProgress = schedule.find((g) => g.state === 'in')

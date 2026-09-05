@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import type { GameSummary } from '@/lib/espn'
 
 function formatDate(dateIso: string): string {
@@ -8,9 +9,11 @@ function formatDate(dateIso: string): string {
 }
 
 export function ScheduleTable({
+  slug,
   teamId,
   games,
 }: {
+  slug: string
   teamId: string
   games: GameSummary[]
 }) {
@@ -34,6 +37,7 @@ export function ScheduleTable({
               game.completed && self.score !== null && opponent.score !== null
             const won =
               decided && Number(self.score) > Number(opponent.score)
+            const hasBoxscore = game.completed || game.state === 'in'
 
             return (
               <tr
@@ -48,10 +52,19 @@ export function ScheduleTable({
                   {isHome ? 'vs' : 'at'} {opponent.name}
                 </td>
                 <td className="px-4 py-2">
-                  {game.completed ? (
-                    <span className={won ? 'text-[var(--seq-fill)]' : ''}>
-                      {won ? 'W' : 'L'} {self.score}-{opponent.score}
-                    </span>
+                  {hasBoxscore ? (
+                    <Link
+                      href={`/team/${slug}/game/${game.id}`}
+                      className="underline decoration-[var(--border-hairline)] underline-offset-2 hover:decoration-current"
+                    >
+                      {game.completed ? (
+                        <span className={won ? 'text-[var(--seq-fill)]' : ''}>
+                          {won ? 'W' : 'L'} {self.score}-{opponent.score}
+                        </span>
+                      ) : (
+                        <span>{game.statusDetail}</span>
+                      )}
+                    </Link>
                   ) : (
                     <span className="text-[var(--text-muted)]">
                       {game.statusDetail}
