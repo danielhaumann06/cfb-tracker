@@ -3,7 +3,6 @@ import { notFound } from 'next/navigation'
 import { LiveGameStats } from '@/components/LiveGameStats'
 import { TeamTotalsTable } from '@/components/TeamTotalsTable'
 import { PlayerStatsSection } from '@/components/PlayerStatsSection'
-import { getTrackedTeam } from '@/lib/teams'
 import { getGameLiveStatus, getGameBoxscore } from '@/lib/espn'
 
 export default async function GamePage({
@@ -12,8 +11,6 @@ export default async function GamePage({
   params: Promise<{ slug: string; eventId: string }>
 }) {
   const { slug, eventId } = await params
-  const tracked = getTrackedTeam(slug)
-  if (!tracked) notFound()
 
   let status
   let boxscore
@@ -32,7 +29,7 @@ export default async function GamePage({
         href={`/team/${slug}`}
         className="text-sm text-[var(--text-secondary)] hover:underline"
       >
-        &larr; Back to {tracked.name}
+        &larr; Back to schedule
       </Link>
 
       <h1 className="mt-2 text-2xl font-semibold">

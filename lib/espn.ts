@@ -75,6 +75,14 @@ function parseStatus(status: any): {
   }
 }
 
+function pickDefaultLogo(logos: any[] | undefined): string {
+  return (
+    logos?.find((l: any) => l.rel?.includes('default'))?.href ??
+    logos?.[0]?.href ??
+    ''
+  )
+}
+
 function mapCompetitor(competitor: any): GameTeam {
   const rawScore = competitor.score
   const score =
@@ -92,6 +100,30 @@ function mapCompetitor(competitor: any): GameTeam {
   }
 }
 
+export interface TeamListEntry {
+  id: string
+  name: string
+  abbreviation: string
+  slug: string
+  logo: string
+}
+
+export async function getAllTeams(): Promise<TeamListEntry[]> {
+  const res = await fetch(`${SITE_BASE}/teams?limit=500`, {
+    next: { revalidate: 86400 },
+  })
+  const data = await res.json()
+  const teams = data.sports?.[0]?.leagues?.[0]?.teams ?? []
+
+  return teams.map((entry: any) => ({
+    id: entry.team.id,
+    name: entry.team.displayName,
+    abbreviation: entry.team.abbreviation,
+    slug: entry.team.slug,
+    logo: pickDefaultLogo(entry.team.logos),
+  }))
+}
+
 export async function getTeamSummary(espnId: string): Promise<TeamSummary> {
   const res = await fetch(`${SITE_BASE}/teams/${espnId}`, {
     next: { revalidate: 3600 },
@@ -101,10 +133,6 @@ export async function getTeamSummary(espnId: string): Promise<TeamSummary> {
   const record = team.record?.items?.[0]
   const statValue = (name: string) =>
     record?.stats?.find((s: any) => s.name === name)?.value ?? 0
-  const logo =
-    team.logos?.find((l: any) => l.rel?.includes('default'))?.href ??
-    team.logos?.[0]?.href ??
-    ''
 
   return {
     id: team.id,
@@ -113,7 +141,7 @@ export async function getTeamSummary(espnId: string): Promise<TeamSummary> {
     record: record?.summary ?? '0-0',
     standingSummary: team.standingSummary ?? '',
     color: team.color ?? '000000',
-    logo,
+    logo: pickDefaultLogo(team.logos),
     wins: statValue('wins'),
     losses: statValue('losses'),
     pointsForPerGame: statValue('avgPointsFor'),

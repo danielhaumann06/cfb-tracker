@@ -1,9 +1,10 @@
 import Image from 'next/image'
+import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { LiveScoreBadge } from '@/components/LiveScoreBadge'
 import { ScheduleTable } from '@/components/ScheduleTable'
 import { StatsSummary } from '@/components/StatsSummary'
-import { getTrackedTeam } from '@/lib/teams'
+import { TRACKED_TEAMS_COOKIE, parseTrackedTeamsCookie } from '@/lib/teams'
 import { getTeamSummary, getTeamSchedule, getFpiSummary, nextGame } from '@/lib/espn'
 
 export default async function TeamPage({
@@ -12,14 +13,23 @@ export default async function TeamPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const tracked = getTrackedTeam(slug)
+  const cookieStore = await cookies()
+  const trackedTeams = parseTrackedTeamsCookie(
+    cookieStore.get(TRACKED_TEAMS_COOKIE)?.value
+  )
+  const tracked = trackedTeams.find((t) => t.slug === slug)
   if (!tracked) notFound()
 
-  const [team, schedule, fpi] = await Promise.all([
-    getTeamSummary(tracked.espnId),
-    getTeamSchedule(tracked.espnId),
-    getFpiSummary(tracked.espnId),
-  ])
+  let team, schedule, fpi
+  try {
+    ;[team, schedule, fpi] = await Promise.all([
+      getTeamSummary(tracked.id),
+      getTeamSchedule(tracked.id),
+      getFpiSummary(tracked.id),
+    ])
+  } catch {
+    notFound()
+  }
   const current = nextGame(schedule)
 
   return (

@@ -1,16 +1,44 @@
 export interface TrackedTeam {
+  id: string
   slug: string
-  espnId: string
-  name: string
 }
 
-export const TRACKED_TEAMS: TrackedTeam[] = [
-  { slug: 'nebraska', espnId: '158', name: 'Nebraska Cornhuskers' },
-  { slug: 'oregon', espnId: '2483', name: 'Oregon Ducks' },
-  { slug: 'alabama', espnId: '333', name: 'Alabama Crimson Tide' },
-  { slug: 'georgia-tech', espnId: '59', name: 'Georgia Tech Yellow Jackets' },
+export const DEFAULT_TEAMS: TrackedTeam[] = [
+  { id: '158', slug: 'nebraska-cornhuskers' },
+  { id: '2483', slug: 'oregon-ducks' },
+  { id: '333', slug: 'alabama-crimson-tide' },
+  { id: '59', slug: 'georgia-tech-yellow-jackets' },
 ]
 
-export function getTrackedTeam(slug: string): TrackedTeam | undefined {
-  return TRACKED_TEAMS.find((t) => t.slug === slug)
+const TRACKED_TEAMS_COOKIE = 'tracked_teams'
+const ICON_TEAM_COOKIE = 'icon_team'
+const DEFAULT_ICON_TEAM_ID = DEFAULT_TEAMS[0].id
+
+export function parseTrackedTeamsCookie(
+  value: string | undefined
+): TrackedTeam[] {
+  // No cookie at all -> first visit, seed with the defaults. An explicitly
+  // empty string is a real, saved "no teams tracked" state, not a missing cookie.
+  if (value === undefined) return DEFAULT_TEAMS
+  if (value === '') return []
+
+  const teams = value
+    .split(',')
+    .map((pair) => {
+      const [id, slug] = pair.split(':')
+      return id && slug ? { id, slug } : null
+    })
+    .filter((t): t is TrackedTeam => t !== null)
+
+  return teams
 }
+
+export function serializeTrackedTeams(teams: TrackedTeam[]): string {
+  return teams.map((t) => `${t.id}:${t.slug}`).join(',')
+}
+
+export function parseIconTeamCookie(value: string | undefined): string {
+  return value || DEFAULT_ICON_TEAM_ID
+}
+
+export { TRACKED_TEAMS_COOKIE, ICON_TEAM_COOKIE }
