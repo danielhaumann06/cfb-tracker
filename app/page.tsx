@@ -5,9 +5,9 @@ import { PlayoffOddsTracker } from '@/components/PlayoffOddsTracker'
 import { ManageTeamsPanel } from '@/components/ManageTeamsPanel'
 import {
   TRACKED_TEAMS_COOKIE,
-  ICON_TEAM_COOKIE,
+  THEME_TEAM_COOKIE,
   parseTrackedTeamsCookie,
-  parseIconTeamCookie,
+  parseThemeTeamCookie,
   type TrackedTeam,
 } from '@/lib/teams'
 import {
@@ -45,33 +45,48 @@ export default async function Home() {
   const trackedTeams = parseTrackedTeamsCookie(
     cookieStore.get(TRACKED_TEAMS_COOKIE)?.value
   )
-  const iconTeamId = parseIconTeamCookie(
-    cookieStore.get(ICON_TEAM_COOKIE)?.value
+  const themeTeamId = parseThemeTeamCookie(
+    cookieStore.get(THEME_TEAM_COOKIE)?.value
   )
   const teams = await getDashboardData(trackedTeams)
+  const themeTeamLogo =
+    teams.find(({ team }) => team.id === themeTeamId)?.team.logo ??
+    (await getTeamSummary(themeTeamId).catch(() => null))?.logo
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-      <h1 className="max-w-md sm:max-w-lg">
-        <Image
-          src="/api/wordmark/light"
-          alt="College Football Tracker"
-          width={1560}
-          height={220}
-          unoptimized
-          priority
-          className="h-auto w-full dark:hidden"
-        />
-        <Image
-          src="/api/wordmark/dark"
-          alt="College Football Tracker"
-          width={1560}
-          height={220}
-          unoptimized
-          priority
-          className="hidden h-auto w-full dark:block"
-        />
-      </h1>
+      <div className="flex items-center gap-3">
+        {themeTeamLogo && (
+          <Image
+            src={themeTeamLogo}
+            alt=""
+            width={56}
+            height={56}
+            unoptimized
+            priority
+          />
+        )}
+        <h1 className="max-w-md sm:max-w-lg">
+          <Image
+            src="/api/wordmark/light"
+            alt="College Football Tracker"
+            width={1560}
+            height={220}
+            unoptimized
+            priority
+            className="h-auto w-full dark:hidden"
+          />
+          <Image
+            src="/api/wordmark/dark"
+            alt="College Football Tracker"
+            width={1560}
+            height={220}
+            unoptimized
+            priority
+            className="hidden h-auto w-full dark:block"
+          />
+        </h1>
+      </div>
       {teams.length === 0 && (
         <p className="mt-1 text-[var(--text-secondary)]">
           No teams tracked yet — add one below.
@@ -115,7 +130,7 @@ export default async function Home() {
             name: team.name,
             logo: team.logo,
           }))}
-          iconTeamId={iconTeamId}
+          themeTeamId={themeTeamId}
         />
       </div>
     </main>

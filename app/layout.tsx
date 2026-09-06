@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { cookies } from "next/headers";
 import { AppShell } from "@/components/AppShell";
+import { THEME_TEAM_COOKIE, parseThemeTeamCookie } from "@/lib/teams";
+import { getTeamSummary } from "@/lib/espn";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,6 +16,21 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const DEFAULT_THEME_COLOR = "2a78d6";
+
+async function getThemeColor(): Promise<string> {
+  const cookieStore = await cookies();
+  const themeTeamId = parseThemeTeamCookie(
+    cookieStore.get(THEME_TEAM_COOKIE)?.value
+  );
+  try {
+    const team = await getTeamSummary(themeTeamId);
+    return team.color || DEFAULT_THEME_COLOR;
+  } catch {
+    return DEFAULT_THEME_COLOR;
+  }
+}
+
 export const metadata: Metadata = {
   title: "CFB Tracker",
   description:
@@ -23,16 +41,24 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport: Viewport = {
-  themeColor: "#2a78d6",
-  viewportFit: "cover",
-};
+export async function generateViewport(): Promise<Viewport> {
+  const color = await getThemeColor();
+  return {
+    themeColor: `#${color}`,
+    viewportFit: "cover",
+  };
+}
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({
+  children,
+}: LayoutProps<"/">) {
+  const color = await getThemeColor();
+
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      style={{ ["--seq-fill" as string]: `#${color}` }}
     >
       <body className="min-h-full flex flex-col pt-[env(safe-area-inset-top)]">
         <AppShell>{children}</AppShell>

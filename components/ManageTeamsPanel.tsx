@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { useMemo, useState, useTransition } from 'react'
-import { updateTrackedTeams, setIconTeam } from '@/app/actions'
+import { updateTrackedTeams, setThemeTeam } from '@/app/actions'
 import type { TrackedTeam } from '@/lib/teams'
 
 interface TeamOption {
@@ -16,11 +16,11 @@ interface TeamOption {
 export function ManageTeamsPanel({
   trackedTeams,
   trackedTeamOptions,
-  iconTeamId,
+  themeTeamId,
 }: {
   trackedTeams: TrackedTeam[]
   trackedTeamOptions: TeamOption[]
-  iconTeamId: string
+  themeTeamId: string
 }) {
   const [open, setOpen] = useState(false)
   const [pending, setPending] = useState<TrackedTeam[]>(trackedTeams)
@@ -28,7 +28,7 @@ export function ManageTeamsPanel({
   const [loadingAllTeams, setLoadingAllTeams] = useState(false)
   const [query, setQuery] = useState('')
   const [isSaving, startSaving] = useTransition()
-  const [isPickingIcon, startPickingIcon] = useTransition()
+  const [isPickingTheme, startPickingTheme] = useTransition()
   const [saved, setSaved] = useState(false)
 
   async function handleOpen() {
@@ -74,9 +74,9 @@ export function ManageTeamsPanel({
     })
   }
 
-  function pickIcon(id: string) {
-    startPickingIcon(async () => {
-      await setIconTeam(id)
+  function pickTheme(id: string) {
+    startPickingTheme(async () => {
+      await setThemeTeam(id)
     })
   }
 
@@ -196,18 +196,18 @@ export function ManageTeamsPanel({
       {trackedTeamOptions.length > 0 && (
         <div className="mt-6">
           <h3 className="text-sm font-semibold text-[var(--text-muted)]">
-            Home Screen Icon
+            Theme
           </h3>
           <div className="mt-2 flex flex-wrap gap-2">
             {trackedTeamOptions.map((t) => (
               <button
                 key={t.id}
                 type="button"
-                onClick={() => pickIcon(t.id)}
-                disabled={isPickingIcon}
-                aria-label={`Use ${t.name} as home screen icon`}
+                onClick={() => pickTheme(t.id)}
+                disabled={isPickingTheme}
+                aria-label={`Use ${t.name} colors as the app theme`}
                 className={`rounded-lg border p-1.5 transition ${
-                  t.id === iconTeamId
+                  t.id === themeTeamId
                     ? 'border-[var(--seq-fill)]'
                     : 'border-[var(--border-hairline)]'
                 }`}
@@ -225,8 +225,10 @@ export function ManageTeamsPanel({
             ))}
           </div>
           <p className="mt-2 text-xs text-[var(--text-muted)]">
-            iOS caches home-screen icons per device — remove and re-add the
-            app to your Home Screen in Safari to see a change.
+            Recolors the app to match and puts this team&rsquo;s logo next to
+            the header. It also updates your Home Screen icon — remove and
+            re-add the app in Safari to see that change (iOS caches icons per
+            device).
           </p>
         </div>
       )}

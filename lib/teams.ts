@@ -12,8 +12,8 @@ export const DEFAULT_TEAMS: TrackedTeam[] = [
 ]
 
 const TRACKED_TEAMS_COOKIE = 'tracked_teams'
-const ICON_TEAM_COOKIE = 'icon_team'
-const DEFAULT_ICON_TEAM_ID = DEFAULT_TEAMS[0].id
+const THEME_TEAM_COOKIE = 'theme_team'
+const DEFAULT_THEME_TEAM_ID = DEFAULT_TEAMS[0].id
 
 export function parseTrackedTeamsCookie(
   value: string | undefined
@@ -38,8 +38,8 @@ export function serializeTrackedTeams(teams: TrackedTeam[]): string {
   return teams.map((t) => `${t.id}:${t.slug}`).join(',')
 }
 
-export function parseIconTeamCookie(value: string | undefined): string {
-  return value || DEFAULT_ICON_TEAM_ID
+export function parseThemeTeamCookie(value: string | undefined): string {
+  return value || DEFAULT_THEME_TEAM_ID
 }
 
-export { TRACKED_TEAMS_COOKIE, ICON_TEAM_COOKIE }
+export { TRACKED_TEAMS_COOKIE, THEME_TEAM_COOKIE }

@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
 import { cookies } from 'next/headers'
 import { PNG } from 'pngjs'
-import { ICON_TEAM_COOKIE, parseIconTeamCookie } from '@/lib/teams'
+import { THEME_TEAM_COOKIE, parseThemeTeamCookie } from '@/lib/teams'
 import { getTeamSummary } from '@/lib/espn'
 
 // next/og's ImageResponse (Satori) fails to decode some team logos' alpha
@@ -34,7 +34,7 @@ async function logoDataUri(logoUrl: string): Promise<string> {
 
 export async function buildTeamIcon(size: number) {
   const cookieStore = await cookies()
-  const teamId = parseIconTeamCookie(cookieStore.get(ICON_TEAM_COOKIE)?.value)
+  const teamId = parseThemeTeamCookie(cookieStore.get(THEME_TEAM_COOKIE)?.value)
   const team = await getTeamSummary(teamId)
   const logo = team.logo ? await logoDataUri(team.logo) : null
   const inner = Math.round(size * 0.72)
