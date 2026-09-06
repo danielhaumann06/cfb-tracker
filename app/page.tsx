@@ -69,6 +69,7 @@ export default async function Home() {
       getLivePowerFiveGames(),
     ])
   const slugById = new Map(allTeams.map((t) => [t.id, t.slug]))
+  const rankById = new Map(nationalRankings.map((t) => [t.id, t.rank]))
   const dashboardOrder = parseDashboardOrderCookie(
     cookieStore.get(DASHBOARD_ORDER_COOKIE)?.value,
     trackedTeams.map((t) => t.id)
@@ -103,6 +104,7 @@ export default async function Home() {
           next={bundle.next}
           odds={bundle.odds}
           fpi={bundle.fpi}
+          nationalRank={rankById.get(bundle.team.id) ?? null}
         />
       )
       continue

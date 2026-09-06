@@ -18,12 +18,14 @@ export function TeamCard({
   next,
   odds,
   fpi,
+  nationalRank,
 }: {
   slug: string
   team: TeamSummary
   next: GameSummary | null
   odds: GameOdds | null
   fpi: FpiSummary | null
+  nationalRank?: number | null
 }) {
   const isHome = next ? next.home.id === team.id : false
   const opponent = next ? (isHome ? next.away : next.home) : null
@@ -46,7 +48,10 @@ export function TeamCard({
           />
         )}
         <div className="min-w-0">
-          <h2 className="truncate font-semibold">{team.name}</h2>
+          <h2 className="truncate font-semibold">
+            {nationalRank != null && `#${nationalRank} `}
+            {team.name}
+          </h2>
           <p className="text-sm text-[var(--text-secondary)]">
             {team.record} &middot; {team.standingSummary}
           </p>
