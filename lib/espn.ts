@@ -25,7 +25,9 @@ export type GameState = 'pre' | 'in' | 'post'
 export interface GameTeam {
   id: string
   name: string
+  nickname: string
   abbreviation: string
+  logo: string
   score: string | null
 }
 
@@ -95,7 +97,12 @@ function mapCompetitor(competitor: any): GameTeam {
   return {
     id: competitor.team.id,
     name: competitor.team.displayName,
+    nickname:
+      competitor.team.name ??
+      competitor.team.shortDisplayName ??
+      competitor.team.displayName,
     abbreviation: competitor.team.abbreviation,
+    logo: pickDefaultLogo(competitor.team.logos),
     score,
   }
 }
@@ -242,6 +249,8 @@ export async function getFpiSummary(espnId: string): Promise<FpiSummary | null> 
 export interface TeamBoxscore {
   teamId: string
   teamName: string
+  teamNickname: string
+  teamLogo: string
   stats: { name: string; label: string; displayValue: string }[]
 }
 
@@ -254,6 +263,8 @@ export interface PlayerCategory {
 export interface TeamPlayerStats {
   teamId: string
   teamName: string
+  teamNickname: string
+  teamLogo: string
   categories: PlayerCategory[]
 }
 
@@ -289,6 +300,8 @@ export async function getGameBoxscore(
   const teams: TeamBoxscore[] = boxscore.teams.map((entry: any) => ({
     teamId: entry.team.id,
     teamName: entry.team.displayName,
+    teamNickname: entry.team.name ?? entry.team.displayName,
+    teamLogo: entry.team.logo ?? '',
     stats: entry.statistics.map((s: any) => ({
       name: s.name,
       label: s.label,
@@ -300,6 +313,8 @@ export async function getGameBoxscore(
     (entry: any) => ({
       teamId: entry.team.id,
       teamName: entry.team.displayName,
+      teamNickname: entry.team.name ?? entry.team.displayName,
+      teamLogo: entry.team.logo ?? '',
       categories: entry.statistics.map((cat: any) => ({
         name: cat.name,
         labels: cat.labels,

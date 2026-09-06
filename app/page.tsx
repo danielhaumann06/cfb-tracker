@@ -55,37 +55,50 @@ export default async function Home() {
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-      <div className="flex items-center gap-3">
-        {themeTeamLogo && (
-          <Image
-            src={themeTeamLogo}
-            alt=""
-            width={56}
-            height={56}
-            unoptimized
-            priority
-          />
-        )}
-        <h1 className="max-w-md sm:max-w-lg">
-          <Image
-            src="/api/wordmark/light"
-            alt="College Football Tracker"
-            width={1560}
-            height={220}
-            unoptimized
-            priority
-            className="h-auto w-full dark:hidden"
-          />
-          <Image
-            src="/api/wordmark/dark"
-            alt="College Football Tracker"
-            width={1560}
-            height={220}
-            unoptimized
-            priority
-            className="hidden h-auto w-full dark:block"
-          />
-        </h1>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          {themeTeamLogo && (
+            <Image
+              src={themeTeamLogo}
+              alt=""
+              width={56}
+              height={56}
+              unoptimized
+              priority
+              className="h-9 w-9 shrink-0 sm:h-14 sm:w-14"
+            />
+          )}
+          <h1 className="min-w-0">
+            <Image
+              src="/api/wordmark/light"
+              alt="College Football Tracker"
+              width={1560}
+              height={220}
+              unoptimized
+              priority
+              className="h-6 w-auto dark:hidden sm:h-9"
+            />
+            <Image
+              src="/api/wordmark/dark"
+              alt="College Football Tracker"
+              width={1560}
+              height={220}
+              unoptimized
+              priority
+              className="hidden h-6 w-auto dark:block sm:h-9"
+            />
+          </h1>
+        </div>
+        <SettingsMenu
+          trackedTeams={trackedTeams}
+          trackedTeamOptions={teams.map(({ team, slug }) => ({
+            id: team.id,
+            slug,
+            name: team.name,
+            logo: team.logo,
+          }))}
+          themeTeamId={themeTeamId}
+        />
       </div>
       {teams.length === 0 && (
         <p className="mt-1 text-[var(--text-secondary)]">

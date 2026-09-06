@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import type { GameBoxscore, GameTeam, GameState } from '@/lib/espn'
 import { TeamTotalsTable } from './TeamTotalsTable'
 import { PlayerStatsSection } from './PlayerStatsSection'
+import { GameScoreBar } from './GameScoreBar'
 
 interface LiveStatus {
   home: GameTeam
@@ -46,20 +47,12 @@ export function LiveGameStats({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3 rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-4 shadow-[var(--shadow-card)]">
-        {!status.completed && (
-          <span className="rounded-full bg-[var(--seq-fill)] px-2 py-0.5 text-xs font-semibold text-white">
-            LIVE
-          </span>
-        )}
-        <span className="font-medium">
-          {status.away.name} {status.away.score} — {status.home.name}{' '}
-          {status.home.score}
-        </span>
-        <span className="text-sm text-[var(--text-muted)]">
-          {status.statusDetail}
-        </span>
-      </div>
+      <GameScoreBar
+        away={status.away}
+        home={status.home}
+        statusDetail={status.statusDetail}
+        live={!status.completed}
+      />
 
       {boxscore ? (
         <>

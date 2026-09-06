@@ -1,7 +1,9 @@
+import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { LiveGameStats } from '@/components/LiveGameStats'
 import { TeamTotalsTable } from '@/components/TeamTotalsTable'
 import { PlayerStatsSection } from '@/components/PlayerStatsSection'
+import { GameScoreBar } from '@/components/GameScoreBar'
 import { getGameLiveStatus, getGameBoxscore } from '@/lib/espn'
 
 export default async function GamePage({
@@ -24,8 +26,32 @@ export default async function GamePage({
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-      <h1 className="text-2xl font-semibold">
-        {status.away.name} at {status.home.name}
+      <h1 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-2xl font-semibold">
+        <span className="inline-flex items-center gap-1.5">
+          {status.away.logo && (
+            <Image
+              src={status.away.logo}
+              alt=""
+              width={28}
+              height={28}
+              unoptimized
+            />
+          )}
+          {status.away.nickname}
+        </span>
+        <span className="text-[var(--text-muted)]">at</span>
+        <span className="inline-flex items-center gap-1.5">
+          {status.home.logo && (
+            <Image
+              src={status.home.logo}
+              alt=""
+              width={28}
+              height={28}
+              unoptimized
+            />
+          )}
+          {status.home.nickname}
+        </span>
       </h1>
 
       <div className="mt-6">
@@ -37,15 +63,12 @@ export default async function GamePage({
           />
         ) : (
           <div className="space-y-6">
-            <div className="flex items-center gap-3 rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-4 shadow-[var(--shadow-card)]">
-              <span className="font-medium">
-                {status.away.name} {status.away.score} — {status.home.name}{' '}
-                {status.home.score}
-              </span>
-              <span className="text-sm text-[var(--text-muted)]">
-                {status.statusDetail}
-              </span>
-            </div>
+            <GameScoreBar
+              away={status.away}
+              home={status.home}
+              statusDetail={status.statusDetail}
+              live={false}
+            />
 
             {boxscore ? (
               <>

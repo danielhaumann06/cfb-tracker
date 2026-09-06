@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import type { PlayerCategory, TeamPlayerStats } from '@/lib/espn'
 import { groupPlayerCategories } from '@/lib/espn'
 
@@ -14,19 +15,33 @@ const CATEGORY_LABELS: Record<string, string> = {
   puntReturns: 'Punt Returns',
 }
 
+const NAME_SUFFIXES = new Set(['jr', 'sr', 'ii', 'iii', 'iv', 'v'])
+
+function lastName(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/)
+  let index = parts.length - 1
+  while (
+    index > 0 &&
+    NAME_SUFFIXES.has(parts[index].toLowerCase().replace(/\.$/, ''))
+  ) {
+    index--
+  }
+  return parts[index]
+}
+
 function CategoryTable({ category }: { category: PlayerCategory }) {
   if (!category.rows.length) return null
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-[var(--border-hairline)]">
-      <table className="w-full text-sm">
+    <div className="rounded-lg border border-[var(--border-hairline)]">
+      <table className="w-full table-fixed text-[11px] sm:text-xs">
         <thead>
           <tr className="border-b border-[var(--gridline)] text-left text-[var(--text-muted)]">
-            <th className="px-3 py-1.5 font-normal">
+            <th className="w-16 truncate px-1.5 py-1 font-normal sm:w-20 sm:px-2">
               {CATEGORY_LABELS[category.name] ?? category.name}
             </th>
             {category.labels.map((label) => (
-              <th key={label} className="px-3 py-1.5 text-right font-normal">
+              <th key={label} className="px-0.5 py-1 text-right font-normal">
                 {label}
               </th>
             ))}
@@ -38,9 +53,14 @@ function CategoryTable({ category }: { category: PlayerCategory }) {
               key={row.playerId}
               className="border-b border-[var(--gridline)] last:border-0"
             >
-              <td className="px-3 py-1.5">{row.name}</td>
+              <td
+                className="truncate px-1.5 py-1 sm:px-2"
+                title={row.name}
+              >
+                {lastName(row.name)}
+              </td>
               {row.values.map((value, i) => (
-                <td key={i} className="px-3 py-1.5 text-right">
+                <td key={i} className="px-0.5 py-1 text-right">
                   {value}
                 </td>
               ))}
@@ -83,7 +103,18 @@ export function PlayerStatsSection({ team }: { team: TeamPlayerStats }) {
 
   return (
     <div className="space-y-4 rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-4 shadow-[var(--shadow-card)]">
-      <h3 className="font-semibold">{team.teamName}</h3>
+      <h3 className="flex items-center gap-2 font-semibold">
+        {team.teamLogo && (
+          <Image
+            src={team.teamLogo}
+            alt=""
+            width={22}
+            height={22}
+            unoptimized
+          />
+        )}
+        {team.teamNickname}
+      </h3>
       <StatGroup title="Offense" categories={offense} />
       <StatGroup title="Defense" categories={defense} />
       <StatGroup title="Special Teams" categories={specialTeams} />
