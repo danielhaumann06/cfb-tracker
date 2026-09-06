@@ -5,7 +5,8 @@ import { usePathname } from 'next/navigation'
 
 const TABS = [
   { href: '/', label: 'Dashboard' },
-  { href: '/conferences', label: 'Conference Breakdown' },
+  { href: '/polls', label: 'Polls' },
+  { href: '/conferences', label: 'Conferences' },
 ]
 
 export function TopTabs() {

@@ -440,26 +440,33 @@ export async function getNationalRankings(): Promise<{
 
 const RANKINGS_CORE_BASE =
   'https://sports.core.api.espn.com/v2/sports/football/leagues/college-football/seasons'
-const AP_POLL_ID = '1'
+
+export const POLL_IDS = {
+  ap: '1',
+  coaches: '2',
+  cfp: '21',
+} as const
 
 function teamIdFromRef(ref: string | undefined): string {
   return ref?.match(/\/teams\/(\d+)/)?.[1] ?? ''
 }
 
 interface RawPollWeek {
+  pollName: string
   weekLabel: string
-  ranks: { teamId: string; rank: number }[]
+  ranks: { teamId: string; rank: number; record: string }[]
   others: { teamId: string; points: number }[]
   droppedOut: { teamId: string; previousRank: number }[]
 }
 
-async function fetchApPollWeek(
+async function fetchPollWeek(
+  pollId: string,
   season: number,
   seasonType: number,
   week: number
 ): Promise<RawPollWeek | null> {
   const res = await fetch(
-    `${RANKINGS_CORE_BASE}/${season}/types/${seasonType}/weeks/${week}/rankings/${AP_POLL_ID}?lang=en&region=us`,
+    `${RANKINGS_CORE_BASE}/${season}/types/${seasonType}/weeks/${week}/rankings/${pollId}?lang=en&region=us`,
     { next: { revalidate: 3600 } }
   )
   if (!res.ok) return null
@@ -467,10 +474,12 @@ async function fetchApPollWeek(
   if (!data.ranks?.length) return null
 
   return {
+    pollName: data.name ?? data.shortName ?? 'Poll',
     weekLabel: data.occurrence?.displayValue ?? `Week ${week}`,
     ranks: data.ranks.map((r: any) => ({
       teamId: teamIdFromRef(r.team?.$ref),
       rank: r.current,
+      record: r.record?.summary ?? '',
     })),
     others: (data.others ?? []).map((r: any) => ({
       teamId: teamIdFromRef(r.team?.$ref),
@@ -483,16 +492,17 @@ async function fetchApPollWeek(
   }
 }
 
-export interface Top25TimelineTeam {
+export interface PollTimelineTeam {
   id: string
   name: string
   abbreviation: string
   logo: string
   slug: string
   color: string
+  record: string
 }
 
-export interface Top25BubbleTeam {
+export interface PollBubbleTeam {
   id: string
   name: string
   logo: string
@@ -500,7 +510,7 @@ export interface Top25BubbleTeam {
   points: number
 }
 
-export interface Top25DroppedTeam {
+export interface PollDroppedTeam {
   id: string
   name: string
   logo: string
@@ -508,12 +518,13 @@ export interface Top25DroppedTeam {
   previousRank: number
 }
 
-export interface Top25Timeline {
+export interface PollTimeline {
+  pollName: string
   weekLabels: string[]
-  teams: Top25TimelineTeam[]
+  teams: PollTimelineTeam[]
   ranks: Record<string, (number | null)[]>
-  droppedOut: Top25DroppedTeam[]
-  others: Top25BubbleTeam[]
+  droppedOut: PollDroppedTeam[]
+  others: PollBubbleTeam[]
 }
 
 async function resolveTeamBasics(id: string): Promise<TeamListEntry | null> {
@@ -537,13 +548,13 @@ async function resolveTeamBasics(id: string): Promise<TeamListEntry | null> {
 
 const MAX_REGULAR_SEASON_WEEKS = 20
 
-export async function getApTop25Timeline(): Promise<Top25Timeline> {
+export async function getPollTimeline(pollId: string): Promise<PollTimeline> {
   const season = currentSeasonYear()
 
   const [preseason, ...regularSeasonWeeks] = await Promise.all([
-    fetchApPollWeek(season, 1, 1),
+    fetchPollWeek(pollId, season, 1, 1),
     ...Array.from({ length: MAX_REGULAR_SEASON_WEEKS }, (_, i) =>
-      fetchApPollWeek(season, 2, i + 1)
+      fetchPollWeek(pollId, season, 2, i + 1)
     ),
   ])
 
@@ -556,7 +567,14 @@ export async function getApTop25Timeline(): Promise<Top25Timeline> {
 
   const latest = weeks.at(-1)
   if (!latest) {
-    return { weekLabels: [], teams: [], ranks: {}, droppedOut: [], others: [] }
+    return {
+      pollName: '',
+      weekLabels: [],
+      teams: [],
+      ranks: {},
+      droppedOut: [],
+      others: [],
+    }
   }
 
   const allTeams = await getAllTeams()
@@ -591,8 +609,9 @@ export async function getApTop25Timeline(): Promise<Top25Timeline> {
     )
   }
 
-  const teams: Top25TimelineTeam[] = currentTeamIds.map((id) => {
+  const teams: PollTimelineTeam[] = currentTeamIds.map((id) => {
     const info = infoById.get(id)
+    const record = latest.ranks.find((r) => r.teamId === id)?.record ?? ''
     return {
       id,
       name: info?.name ?? id,
@@ -600,10 +619,11 @@ export async function getApTop25Timeline(): Promise<Top25Timeline> {
       logo: info?.logo ?? '',
       slug: info?.slug ?? '',
       color: info?.color ?? '',
+      record,
     }
   })
 
-  const droppedOut: Top25DroppedTeam[] = latest.droppedOut.map((d) => {
+  const droppedOut: PollDroppedTeam[] = latest.droppedOut.map((d) => {
     const info = infoById.get(d.teamId)
     return {
       id: d.teamId,
@@ -614,7 +634,7 @@ export async function getApTop25Timeline(): Promise<Top25Timeline> {
     }
   })
 
-  const others: Top25BubbleTeam[] = latest.others
+  const others: PollBubbleTeam[] = latest.others
     .map((o) => {
       const info = infoById.get(o.teamId)
       return {
@@ -628,6 +648,7 @@ export async function getApTop25Timeline(): Promise<Top25Timeline> {
     .sort((a, b) => b.points - a.points)
 
   return {
+    pollName: latest.pollName,
     weekLabels: weeks.map((w) => w.weekLabel),
     teams,
     ranks,

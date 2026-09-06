@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { Top25Timeline } from '@/lib/espn'
+import type { PollTimeline } from '@/lib/espn'
 
 const WIDTH = 680
 const HEIGHT = 460
@@ -31,14 +31,14 @@ function contiguousRuns(series: (number | null)[]): { start: number; end: number
   return runs
 }
 
-export function Top25RaceChart({ timeline }: { timeline: Top25Timeline }) {
+export function PollRaceChart({ timeline }: { timeline: PollTimeline }) {
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const { teams, weekLabels, ranks } = timeline
 
   if (weekLabels.length === 0 || teams.length === 0) {
     return (
       <p className="text-sm text-[var(--text-muted)]">
-        No AP Top 25 poll available yet this season.
+        No poll data available yet this season.
       </p>
     )
   }
@@ -86,7 +86,7 @@ export function Top25RaceChart({ timeline }: { timeline: Top25Timeline }) {
         height={HEIGHT}
         className="max-w-none"
         role="img"
-        aria-label="AP Top 25 rank by week for each ranked team"
+        aria-label="Rank by week for each ranked team"
       >
         {[1, 5, 10, 15, 20, 25].map((rank) => (
           <g key={rank}>

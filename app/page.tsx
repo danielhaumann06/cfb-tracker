@@ -4,8 +4,6 @@ import type { ReactNode } from 'react'
 import { TeamCard } from '@/components/TeamCard'
 import { PlayoffOddsTracker } from '@/components/PlayoffOddsTracker'
 import { SettingsMenu } from '@/components/SettingsMenu'
-import { RankingList } from '@/components/RankingList'
-import { Top25RaceChart } from '@/components/Top25RaceChart'
 import { LiveTicker } from '@/components/LiveTicker'
 import {
   TRACKED_TEAMS_COOKIE,
@@ -24,7 +22,6 @@ import {
   getGameOdds,
   getFpiSummary,
   getNationalRankings,
-  getApTop25Timeline,
   getLivePowerFiveGames,
   nextGame,
 } from '@/lib/espn'
@@ -63,12 +60,10 @@ export default async function Home() {
   const themeTeamLogo =
     teams.find(({ team }) => team.id === themeTeamId)?.team.logo ??
     (await getTeamSummary(themeTeamId).catch(() => null))?.logo
-  const [{ teams: nationalRankings }, liveGames, top25Timeline] =
-    await Promise.all([
-      getNationalRankings(),
-      getLivePowerFiveGames(),
-      getApTop25Timeline(),
-    ])
+  const [{ teams: nationalRankings }, liveGames] = await Promise.all([
+    getNationalRankings(),
+    getLivePowerFiveGames(),
+  ])
   const rankById = new Map(nationalRankings.map((t) => [t.id, t.rank]))
   const dashboardOrder = parseDashboardOrderCookie(
     cookieStore.get(DASHBOARD_ORDER_COOKIE)?.value,
@@ -133,58 +128,6 @@ export default async function Home() {
           </div>
         )
       }
-    } else if (item.key === 'rankings') {
-      const top25SlugById = new Map(
-        top25Timeline.teams.map((t) => [t.id, t.slug])
-      )
-      dashboardSections.push(
-        <section key="rankings" className="mt-6">
-          <h2 className="mb-3 font-semibold">AP Top 25</h2>
-          <RankingList
-            entries={nationalRankings.map((t) => ({
-              ...t,
-              slug: top25SlugById.get(t.id),
-            }))}
-          />
-
-          <details className="group mt-4 rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] shadow-[var(--shadow-card)]">
-            <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-semibold [&::-webkit-details-marker]:hidden">
-              Rank by Week
-              <span className="text-[var(--text-muted)] transition-transform group-open:rotate-180">
-                &darr;
-              </span>
-            </summary>
-            <div className="border-t border-[var(--gridline)] px-4 py-3">
-              <Top25RaceChart timeline={top25Timeline} />
-            </div>
-          </details>
-
-          {(top25Timeline.droppedOut.length > 0 ||
-            top25Timeline.others.length > 0) && (
-            <div className="mt-4 space-y-2 text-sm text-[var(--text-secondary)]">
-              {top25Timeline.droppedOut.length > 0 && (
-                <p>
-                  <span className="font-medium text-[var(--foreground)]">
-                    Dropped out:
-                  </span>{' '}
-                  {top25Timeline.droppedOut.map((t) => t.name).join(', ')}
-                </p>
-              )}
-              {top25Timeline.others.length > 0 && (
-                <p>
-                  <span className="font-medium text-[var(--foreground)]">
-                    On the bubble:
-                  </span>{' '}
-                  {top25Timeline.others
-                    .slice(0, 10)
-                    .map((t) => `${t.name} (${t.points.toFixed(0)})`)
-                    .join(', ')}
-                </p>
-              )}
-            </div>
-          )}
-        </section>
-      )
     }
   }
   flushTeamCards()
