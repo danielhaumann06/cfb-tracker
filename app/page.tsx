@@ -2,7 +2,7 @@ import { cookies } from 'next/headers'
 import Image from 'next/image'
 import { TeamCard } from '@/components/TeamCard'
 import { PlayoffOddsTracker } from '@/components/PlayoffOddsTracker'
-import { ManageTeamsPanel } from '@/components/ManageTeamsPanel'
+import { SettingsMenu } from '@/components/SettingsMenu'
 import {
   TRACKED_TEAMS_COOKIE,
   THEME_TEAM_COOKIE,
@@ -122,7 +122,7 @@ export default async function Home() {
       )}
 
       <div className="mt-6">
-        <ManageTeamsPanel
+        <SettingsMenu
           trackedTeams={trackedTeams}
           trackedTeamOptions={teams.map(({ team, slug }) => ({
             id: team.id,
