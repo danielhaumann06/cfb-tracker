@@ -25,6 +25,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#2a78d6",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -33,9 +34,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        <PageNav />
+      <body
+        className="min-h-full flex flex-col"
+        style={{
+          paddingBottom: "calc(4.5rem + env(safe-area-inset-bottom))",
+        }}
+      >
         {children}
+        <PageNav />
       </body>
     </html>
   );
