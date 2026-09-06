@@ -237,11 +237,28 @@ export interface TeamListEntry {
 }
 
 export async function getAllTeams(): Promise<TeamListEntry[]> {
-  const res = await fetch(`${SITE_BASE}/teams?limit=500`, {
-    next: { revalidate: 86400 },
-  })
-  const data = await res.json()
-  const teams = data.sports?.[0]?.leagues?.[0]?.teams ?? []
+  // ESPN's full team list (FBS/FCS/D2/D3 combined) is ~760 teams - asking
+  // for them all in one request worked, but that response is over 2MB and
+  // Next.js silently refuses to cache anything that large, which would
+  // make every call hit ESPN fresh. Page through in 500-team chunks (each
+  // comfortably cacheable) instead, stopping at the first short page.
+  // A lower limit than the true total is also why teams like Missouri
+  // State, Southern Miss, Troy, TCU, and South Carolina were missing from
+  // search/lookups before this paginated.
+  const PAGE_SIZE = 500
+  const teams: any[] = []
+
+  for (let page = 1; ; page++) {
+    const res = await fetch(
+      `${SITE_BASE}/teams?limit=${PAGE_SIZE}&page=${page}`,
+      { next: { revalidate: 86400 } }
+    )
+    if (!res.ok) break
+    const data = await res.json()
+    const pageTeams = data.sports?.[0]?.leagues?.[0]?.teams ?? []
+    teams.push(...pageTeams)
+    if (pageTeams.length < PAGE_SIZE) break
+  }
 
   return teams.map((entry: any) => ({
     id: entry.team.id,
