@@ -6,6 +6,10 @@ const CORE_BASE =
   'https://sports.core.api.espn.com/v2/sports/football/leagues/college-football'
 const STANDINGS_BASE =
   'https://site.api.espn.com/apis/v2/sports/football/college-football/standings'
+const ATHLETE_BASE =
+  'https://site.api.espn.com/apis/common/v3/sports/football/college-football/athletes'
+const ATHLETE_STATS_BASE =
+  'https://site.web.api.espn.com/apis/common/v3/sports/football/college-football/athletes'
 
 export interface TeamSummary {
   id: string
@@ -454,6 +458,20 @@ export interface GameBoxscore {
   players: TeamPlayerStats[]
 }
 
+export const STAT_CATEGORY_LABELS: Record<string, string> = {
+  passing: 'Passing',
+  rushing: 'Rushing',
+  receiving: 'Receiving',
+  fumbles: 'Fumbles',
+  defensive: 'Defense',
+  interceptions: 'Interceptions',
+  kicking: 'Kicking',
+  punting: 'Punting',
+  kickReturns: 'Kick Returns',
+  puntReturns: 'Punt Returns',
+  scoring: 'Scoring',
+}
+
 const OFFENSE_CATEGORIES = ['passing', 'rushing', 'receiving', 'fumbles']
 const DEFENSE_CATEGORIES = ['defensive', 'interceptions']
 const SPECIAL_TEAMS_CATEGORIES = ['kicking', 'punting', 'kickReturns', 'puntReturns']
@@ -600,6 +618,86 @@ export async function getGameBoxscore(
   )
 
   return { teams, players }
+}
+
+export interface PlayerSeasonStat {
+  season: string
+  values: string[]
+}
+
+export interface PlayerStatCategory {
+  name: string
+  labels: string[]
+  displayNames: string[]
+  seasons: PlayerSeasonStat[]
+}
+
+export interface PlayerProfile {
+  id: string
+  name: string
+  jersey: string | null
+  position: string | null
+  headshot: string | null
+  height: string | null
+  weight: string | null
+  team: { id: string; name: string; logo: string } | null
+  statCategories: PlayerStatCategory[]
+}
+
+export async function getPlayerProfile(
+  playerId: string
+): Promise<PlayerProfile | null> {
+  const [bioRes, statsRes] = await Promise.all([
+    fetch(`${ATHLETE_BASE}/${playerId}`, { next: { revalidate: 3600 } }),
+    fetch(`${ATHLETE_STATS_BASE}/${playerId}/stats`, {
+      next: { revalidate: 3600 },
+    }),
+  ])
+  if (!bioRes.ok) return null
+
+  const bioData = await bioRes.json()
+  const athlete = bioData.athlete
+  if (!athlete) return null
+
+  const statCategories: PlayerStatCategory[] = []
+  if (statsRes.ok) {
+    const statsData = await statsRes.json()
+    for (const cat of statsData.categories ?? []) {
+      const seasons: PlayerSeasonStat[] = (cat.statistics ?? [])
+        .map((s: any) => ({
+          season: s.season?.displayName ?? String(s.season?.year ?? ''),
+          values: s.stats ?? [],
+        }))
+        .filter((s: PlayerSeasonStat) => s.season)
+        .reverse()
+      if (seasons.length > 0) {
+        statCategories.push({
+          name: cat.name,
+          labels: cat.labels ?? [],
+          displayNames: cat.displayNames ?? [],
+          seasons,
+        })
+      }
+    }
+  }
+
+  return {
+    id: athlete.id,
+    name: athlete.displayName ?? athlete.fullName ?? '',
+    jersey: athlete.jersey ?? null,
+    position: athlete.position?.displayName ?? null,
+    headshot: athlete.headshot?.href ?? null,
+    height: athlete.displayHeight ?? null,
+    weight: athlete.displayWeight ?? null,
+    team: athlete.team
+      ? {
+          id: athlete.team.id,
+          name: athlete.team.displayName,
+          logo: pickDefaultLogo(athlete.team.logos),
+        }
+      : null,
+    statCategories,
+  }
 }
 
 export function nextGame(schedule: GameSummary[]): GameSummary | null {

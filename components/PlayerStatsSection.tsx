@@ -1,19 +1,7 @@
 import Image from 'next/image'
+import Link from 'next/link'
 import type { PlayerCategory, TeamPlayerStats } from '@/lib/espn'
-import { groupPlayerCategories } from '@/lib/espn'
-
-const CATEGORY_LABELS: Record<string, string> = {
-  passing: 'Passing',
-  rushing: 'Rushing',
-  receiving: 'Receiving',
-  fumbles: 'Fumbles',
-  defensive: 'Defense',
-  interceptions: 'Interceptions',
-  kicking: 'Kicking',
-  punting: 'Punting',
-  kickReturns: 'Kick Returns',
-  puntReturns: 'Punt Returns',
-}
+import { groupPlayerCategories, STAT_CATEGORY_LABELS } from '@/lib/espn'
 
 const NAME_SUFFIXES = new Set(['jr', 'sr', 'ii', 'iii', 'iv', 'v'])
 
@@ -38,7 +26,7 @@ function CategoryTable({ category }: { category: PlayerCategory }) {
         <thead>
           <tr className="border-b border-[var(--gridline)] text-left text-[var(--text-muted)]">
             <th className="w-16 truncate px-1.5 py-1 font-normal sm:w-20 sm:px-2">
-              {CATEGORY_LABELS[category.name] ?? category.name}
+              {STAT_CATEGORY_LABELS[category.name] ?? category.name}
             </th>
             {category.labels.map((label) => (
               <th key={label} className="px-0.5 py-1 text-right font-normal">
@@ -57,7 +45,12 @@ function CategoryTable({ category }: { category: PlayerCategory }) {
                 className="truncate px-1.5 py-1 sm:px-2"
                 title={row.name}
               >
-                {lastName(row.name)}
+                <Link
+                  href={`/player/${row.playerId}`}
+                  className="underline decoration-[var(--border-hairline)] underline-offset-2 hover:decoration-current"
+                >
+                  {lastName(row.name)}
+                </Link>
               </td>
               {row.values.map((value, i) => (
                 <td key={i} className="px-0.5 py-1 text-right">
