@@ -61,7 +61,7 @@ export default async function TeamPage({
   const oddsByGameId = await getUpcomingOdds(schedule)
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+    <main className="mx-auto w-full min-w-0 max-w-4xl px-4 py-8 sm:px-6">
       <div className="flex items-center gap-4">
         {team.logo && (
           <Image src={team.logo} alt="" width={64} height={64} unoptimized />

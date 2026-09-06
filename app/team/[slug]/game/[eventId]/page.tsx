@@ -32,7 +32,7 @@ export default async function GamePage({
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+    <main className="mx-auto w-full min-w-0 max-w-4xl px-4 py-8 sm:px-6">
       <h1 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-2xl font-semibold">
         <span className="inline-flex items-center gap-1.5">
           {status.away.logo && (

@@ -113,6 +113,77 @@ function mapCompetitor(competitor: any): GameTeam {
   }
 }
 
+// ACC, Big 12, Big Ten, SEC - the "Power Four" conference group ids.
+const POWER_FOUR_GROUPS = ['1', '4', '5', '8']
+
+export interface TickerTeam {
+  name: string
+  abbreviation: string
+  logo: string
+  score: string | null
+}
+
+export interface LiveTickerGame {
+  id: string
+  statusDetail: string
+  home: TickerTeam
+  away: TickerTeam
+}
+
+function mapTickerTeam(competitor: any): TickerTeam {
+  return {
+    name:
+      competitor.team.shortDisplayName ??
+      competitor.team.displayName ??
+      competitor.team.abbreviation,
+    abbreviation: competitor.team.abbreviation,
+    logo: competitor.team.logo ?? '',
+    score: competitor.score ?? null,
+  }
+}
+
+export async function getLivePowerFourGames(): Promise<LiveTickerGame[]> {
+  const results = await Promise.all(
+    POWER_FOUR_GROUPS.map(async (group) => {
+      const res = await fetch(`${SITE_BASE}/scoreboard?groups=${group}`, {
+        next: { revalidate: 30 },
+      })
+      if (!res.ok) return []
+      const data = await res.json()
+      return data.events ?? []
+    })
+  )
+
+  const seen = new Set<string>()
+  const games: LiveTickerGame[] = []
+
+  for (const events of results) {
+    for (const event of events as any[]) {
+      const competition = event.competitions[0]
+      if (competition.status.type.state !== 'in') continue
+      if (seen.has(event.id)) continue
+      seen.add(event.id)
+
+      const home = competition.competitors.find(
+        (c: any) => c.homeAway === 'home'
+      )
+      const away = competition.competitors.find(
+        (c: any) => c.homeAway === 'away'
+      )
+
+      games.push({
+        id: event.id,
+        statusDetail:
+          competition.status.type.shortDetail ?? competition.status.type.detail,
+        home: mapTickerTeam(home),
+        away: mapTickerTeam(away),
+      })
+    }
+  }
+
+  return games
+}
+
 export interface TeamListEntry {
   id: string
   name: string

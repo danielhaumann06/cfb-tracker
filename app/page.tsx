@@ -4,6 +4,7 @@ import { TeamCard } from '@/components/TeamCard'
 import { PlayoffOddsTracker } from '@/components/PlayoffOddsTracker'
 import { SettingsMenu } from '@/components/SettingsMenu'
 import { RankingList } from '@/components/RankingList'
+import { LiveTicker } from '@/components/LiveTicker'
 import {
   TRACKED_TEAMS_COOKIE,
   THEME_TEAM_COOKIE,
@@ -18,6 +19,7 @@ import {
   getFpiSummary,
   getNationalRankings,
   getAllTeams,
+  getLivePowerFourGames,
   nextGame,
 } from '@/lib/espn'
 
@@ -55,14 +57,16 @@ export default async function Home() {
   const themeTeamLogo =
     teams.find(({ team }) => team.id === themeTeamId)?.team.logo ??
     (await getTeamSummary(themeTeamId).catch(() => null))?.logo
-  const [{ pollName, teams: nationalRankings }, allTeams] = await Promise.all([
-    getNationalRankings(),
-    getAllTeams(),
-  ])
+  const [{ pollName, teams: nationalRankings }, allTeams, liveGames] =
+    await Promise.all([
+      getNationalRankings(),
+      getAllTeams(),
+      getLivePowerFourGames(),
+    ])
   const slugById = new Map(allTeams.map((t) => [t.id, t.slug]))
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+    <main className="mx-auto w-full min-w-0 max-w-5xl px-4 py-8 sm:px-6">
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           {themeTeamLogo && (
@@ -108,6 +112,11 @@ export default async function Home() {
           themeTeamId={themeTeamId}
         />
       </div>
+
+      <div className="mt-6">
+        <LiveTicker initialGames={liveGames} />
+      </div>
+
       {teams.length === 0 && (
         <p className="mt-1 text-[var(--text-secondary)]">
           No teams tracked yet — add one below.
