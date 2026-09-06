@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import type { GameSummary } from '@/lib/espn'
+import type { GameOdds, GameSummary } from '@/lib/espn'
 
 function formatDate(dateIso: string): string {
   return new Date(dateIso).toLocaleDateString('en-US', {
@@ -12,10 +12,12 @@ export function ScheduleTable({
   slug,
   teamId,
   games,
+  oddsByGameId = {},
 }: {
   slug: string
   teamId: string
   games: GameSummary[]
+  oddsByGameId?: Record<string, GameOdds | null>
 }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] shadow-[var(--shadow-card)]">
@@ -68,6 +70,14 @@ export function ScheduleTable({
                   ) : (
                     <span className="text-[var(--text-muted)]">
                       {game.statusDetail}
+                      {oddsByGameId[game.id]?.details && (
+                        <>
+                          <br />
+                          <span className="text-xs">
+                            {oddsByGameId[game.id]?.details}
+                          </span>
+                        </>
+                      )}
                     </span>
                   )}
                 </td>

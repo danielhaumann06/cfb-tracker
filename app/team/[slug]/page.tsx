@@ -5,7 +5,24 @@ import { LiveScoreBadge } from '@/components/LiveScoreBadge'
 import { ScheduleTable } from '@/components/ScheduleTable'
 import { StatsSummary } from '@/components/StatsSummary'
 import { TRACKED_TEAMS_COOKIE, parseTrackedTeamsCookie } from '@/lib/teams'
-import { getTeamSummary, getTeamSchedule, getFpiSummary, nextGame } from '@/lib/espn'
+import {
+  getTeamSummary,
+  getTeamSchedule,
+  getGameOdds,
+  getFpiSummary,
+  nextGame,
+  type GameOdds,
+} from '@/lib/espn'
+
+async function getUpcomingOdds(
+  schedule: { id: string; state: string }[]
+): Promise<Record<string, GameOdds | null>> {
+  const upcoming = schedule.filter((g) => g.state === 'pre')
+  const odds = await Promise.all(
+    upcoming.map((g) => getGameOdds(g.id).catch(() => null))
+  )
+  return Object.fromEntries(upcoming.map((g, i) => [g.id, odds[i]]))
+}
 
 export default async function TeamPage({
   params,
@@ -31,6 +48,7 @@ export default async function TeamPage({
     notFound()
   }
   const current = nextGame(schedule)
+  const oddsByGameId = await getUpcomingOdds(schedule)
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
@@ -68,7 +86,12 @@ export default async function TeamPage({
 
       <section className="mt-6">
         <h2 className="mb-3 font-semibold">Schedule</h2>
-        <ScheduleTable slug={slug} teamId={team.id} games={schedule} />
+        <ScheduleTable
+          slug={slug}
+          teamId={team.id}
+          games={schedule}
+          oddsByGameId={oddsByGameId}
+        />
       </section>
     </main>
   )

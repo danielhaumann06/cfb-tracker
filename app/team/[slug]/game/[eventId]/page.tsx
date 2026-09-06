@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { LiveGameStats } from '@/components/LiveGameStats'
 import { TeamTotalsTable } from '@/components/TeamTotalsTable'
@@ -10,7 +9,7 @@ export default async function GamePage({
 }: {
   params: Promise<{ slug: string; eventId: string }>
 }) {
-  const { slug, eventId } = await params
+  const { eventId } = await params
 
   let status
   let boxscore
@@ -25,14 +24,7 @@ export default async function GamePage({
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-      <Link
-        href={`/team/${slug}`}
-        className="text-sm text-[var(--text-secondary)] hover:underline"
-      >
-        &larr; Back to schedule
-      </Link>
-
-      <h1 className="mt-2 text-2xl font-semibold">
+      <h1 className="text-2xl font-semibold">
         {status.away.name} at {status.home.name}
       </h1>
 
