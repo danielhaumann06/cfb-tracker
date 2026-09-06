@@ -70,6 +70,7 @@ export function ScheduleTable({
                   ) : (
                     <span className="text-[var(--text-muted)]">
                       {game.statusDetail}
+                      {game.network && ` · ${game.network}`}
                       {oddsByGameId[game.id]?.details && (
                         <>
                           <br />

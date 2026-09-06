@@ -9,9 +9,22 @@ export function GameSummary({ article }: { article: GameArticle }) {
           &darr;
         </span>
       </summary>
-      <p className="border-t border-[var(--gridline)] px-4 py-3 text-sm text-[var(--text-secondary)]">
-        {article.summary}
-      </p>
+      <div className="space-y-3 border-t border-[var(--gridline)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+        {article.sections.map((section, i) => (
+          <div key={i}>
+            {section.heading && (
+              <h4 className="mb-1 font-semibold text-[var(--foreground)]">
+                {section.heading}
+              </h4>
+            )}
+            <div className="space-y-2">
+              {section.paragraphs.map((p, j) => (
+                <p key={j}>{p}</p>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </details>
   )
 }

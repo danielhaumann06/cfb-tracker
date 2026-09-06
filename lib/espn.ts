@@ -45,6 +45,7 @@ export interface GameSummary {
   state: GameState
   completed: boolean
   statusDetail: string
+  network: string | null
   home: GameTeam
   away: GameTeam
 }
@@ -187,6 +188,7 @@ export async function getTeamSchedule(espnId: string): Promise<GameSummary[]> {
       name: event.name,
       shortName: event.shortName,
       week: event.week?.number ?? null,
+      network: competition.broadcasts?.[0]?.media?.shortName ?? null,
       home: mapCompetitor(home),
       away: mapCompetitor(away),
       ...parseStatus(competition.status),
@@ -395,9 +397,45 @@ export function groupPlayerCategories(categories: PlayerCategory[]) {
   }
 }
 
+export interface GameArticleSection {
+  heading: string | null
+  paragraphs: string[]
+}
+
 export interface GameArticle {
   headline: string
-  summary: string
+  sections: GameArticleSection[]
+}
+
+// ESPN's article.story is a wire-service recap: plain text with embedded
+// <a> links, ad-hoc <hl2>Heading</hl2> subheadings, and a "----" divider
+// before AP syndication boilerplate we don't want to show.
+function parseStory(raw: string): GameArticleSection[] {
+  const withoutFooter = raw.split(/\n\s*-{4,}\s*\n/)[0]
+  const withoutLinks = withoutFooter.replace(
+    /<a\b[^>]*>([\s\S]*?)<\/a>/gi,
+    '$1'
+  )
+  const withoutEmptyHeadings = withoutLinks.replace(/<hl2\s*\/>/gi, '')
+  const parts = withoutEmptyHeadings.split(/<hl2>(.*?)<\/hl2>/gi)
+
+  const toParagraphs = (text: string) =>
+    text
+      .split(/\r?\n\s*\r?\n/)
+      .map((p) => p.replace(/\s+/g, ' ').trim())
+      .filter(Boolean)
+
+  const sections: GameArticleSection[] = [
+    { heading: null, paragraphs: toParagraphs(parts[0]) },
+  ]
+  for (let i = 1; i < parts.length; i += 2) {
+    sections.push({
+      heading: parts[i].trim(),
+      paragraphs: toParagraphs(parts[i + 1] ?? ''),
+    })
+  }
+
+  return sections.filter((s) => s.paragraphs.length > 0)
 }
 
 export async function getGameArticle(
@@ -411,9 +449,13 @@ export async function getGameArticle(
   const article = data.article
   if (!article?.description) return null
 
+  const sections = article.story
+    ? parseStory(article.story)
+    : [{ heading: null, paragraphs: [article.description] }]
+
   return {
     headline: article.headline ?? '',
-    summary: article.description,
+    sections,
   }
 }
 

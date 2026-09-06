@@ -1,7 +1,66 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+
+const STACK_KEY = 'cfb_nav_stack'
+const INDEX_KEY = 'cfb_nav_index'
+
+function readNavState(): { stack: string[]; index: number } {
+  try {
+    const stack = JSON.parse(sessionStorage.getItem(STACK_KEY) ?? 'null')
+    const index = JSON.parse(sessionStorage.getItem(INDEX_KEY) ?? 'null')
+    if (Array.isArray(stack) && typeof index === 'number') {
+      return { stack, index }
+    }
+  } catch {
+    // sessionStorage unavailable (private mode, etc.) - fall through
+  }
+  return { stack: [], index: -1 }
+}
+
+function writeNavState(stack: string[], index: number) {
+  try {
+    sessionStorage.setItem(STACK_KEY, JSON.stringify(stack))
+    sessionStorage.setItem(INDEX_KEY, JSON.stringify(index))
+  } catch {
+    // ignore - Forward just won't persist across reloads this session
+  }
+}
+
+// The browser deliberately doesn't expose canGoForward, so we track our own
+// per-tab navigation stack in sessionStorage to know whether Forward has
+// anywhere to go, distinguishing "moved back/forward" from "navigated fresh"
+// (which should drop any stale forward entries, same as real browser history).
+function useCanGoForward(): boolean {
+  const pathname = usePathname()
+  const [canGoForward, setCanGoForward] = useState(false)
+
+  useEffect(() => {
+    let { stack, index } = readNavState()
+
+    if (stack.length === 0) {
+      stack = [pathname]
+      index = 0
+    } else if (pathname === stack[index]) {
+      // same page (e.g. first mount) - no change
+    } else if (index + 1 < stack.length && pathname === stack[index + 1]) {
+      index += 1
+    } else if (index - 1 >= 0 && pathname === stack[index - 1]) {
+      index -= 1
+    } else {
+      stack = [...stack.slice(0, index + 1), pathname]
+      index = stack.length - 1
+    }
+
+    writeNavState(stack, index)
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing with sessionStorage/navigation, an external system, not derivable during render
+    setCanGoForward(index < stack.length - 1)
+  }, [pathname])
+
+  return canGoForward
+}
 
 function BackIcon() {
   return (
@@ -78,6 +137,7 @@ function TabButton({
 
 export function PageNav() {
   const router = useRouter()
+  const canGoForward = useCanGoForward()
 
   return (
     <nav
@@ -86,11 +146,13 @@ export function PageNav() {
     >
       <div className="mx-auto flex max-w-5xl items-center justify-around px-2">
         <TabButton onClick={() => router.back()} label="Back" icon={<BackIcon />} />
-        <TabButton
-          onClick={() => router.forward()}
-          label="Forward"
-          icon={<ForwardIcon />}
-        />
+        {canGoForward && (
+          <TabButton
+            onClick={() => router.forward()}
+            label="Forward"
+            icon={<ForwardIcon />}
+          />
+        )}
         <TabButton href="/" label="Home" icon={<HomeIcon />} />
       </div>
     </nav>
