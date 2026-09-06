@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import { TeamCard } from '@/components/TeamCard'
 import { PlayoffOddsTracker } from '@/components/PlayoffOddsTracker'
 import { SettingsMenu } from '@/components/SettingsMenu'
-import { RankingList } from '@/components/RankingList'
+import { Top25RaceChart } from '@/components/Top25RaceChart'
 import { LiveTicker } from '@/components/LiveTicker'
 import {
   TRACKED_TEAMS_COOKIE,
@@ -23,7 +23,7 @@ import {
   getGameOdds,
   getFpiSummary,
   getNationalRankings,
-  getAllTeams,
+  getApTop25Timeline,
   getLivePowerFiveGames,
   nextGame,
 } from '@/lib/espn'
@@ -62,13 +62,12 @@ export default async function Home() {
   const themeTeamLogo =
     teams.find(({ team }) => team.id === themeTeamId)?.team.logo ??
     (await getTeamSummary(themeTeamId).catch(() => null))?.logo
-  const [{ pollName, teams: nationalRankings }, allTeams, liveGames] =
+  const [{ teams: nationalRankings }, liveGames, top25Timeline] =
     await Promise.all([
       getNationalRankings(),
-      getAllTeams(),
       getLivePowerFiveGames(),
+      getApTop25Timeline(),
     ])
-  const slugById = new Map(allTeams.map((t) => [t.id, t.slug]))
   const rankById = new Map(nationalRankings.map((t) => [t.id, t.rank]))
   const dashboardOrder = parseDashboardOrderCookie(
     cookieStore.get(DASHBOARD_ORDER_COOKIE)?.value,
@@ -135,14 +134,41 @@ export default async function Home() {
       }
     } else if (item.key === 'rankings') {
       dashboardSections.push(
-        <section key="rankings" className="mt-6">
-          <h2 className="mb-3 font-semibold">{pollName}</h2>
-          <RankingList
-            entries={nationalRankings.map((t) => ({
-              ...t,
-              slug: slugById.get(t.id),
-            }))}
-          />
+        <section
+          key="rankings"
+          className="mt-6 rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-5 shadow-[var(--shadow-card)]"
+        >
+          <h2 className="font-semibold">AP Top 25</h2>
+          <p className="text-sm text-[var(--text-muted)]">
+            Rank by week for every currently ranked team
+          </p>
+          <div className="mt-4">
+            <Top25RaceChart timeline={top25Timeline} />
+          </div>
+          {(top25Timeline.droppedOut.length > 0 ||
+            top25Timeline.others.length > 0) && (
+            <div className="mt-4 space-y-2 text-sm text-[var(--text-secondary)]">
+              {top25Timeline.droppedOut.length > 0 && (
+                <p>
+                  <span className="font-medium text-[var(--foreground)]">
+                    Dropped out:
+                  </span>{' '}
+                  {top25Timeline.droppedOut.map((t) => t.name).join(', ')}
+                </p>
+              )}
+              {top25Timeline.others.length > 0 && (
+                <p>
+                  <span className="font-medium text-[var(--foreground)]">
+                    On the bubble:
+                  </span>{' '}
+                  {top25Timeline.others
+                    .slice(0, 10)
+                    .map((t) => `${t.name} (${t.points.toFixed(0)})`)
+                    .join(', ')}
+                </p>
+              )}
+            </div>
+          )}
         </section>
       )
     }

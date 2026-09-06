@@ -421,6 +421,204 @@ export async function getNationalRankings(): Promise<{
   return { pollName: apPoll?.name ?? 'Rankings', teams }
 }
 
+const RANKINGS_CORE_BASE =
+  'https://sports.core.api.espn.com/v2/sports/football/leagues/college-football/seasons'
+const AP_POLL_ID = '1'
+
+function teamIdFromRef(ref: string | undefined): string {
+  return ref?.match(/\/teams\/(\d+)/)?.[1] ?? ''
+}
+
+interface RawPollWeek {
+  weekLabel: string
+  ranks: { teamId: string; rank: number }[]
+  others: { teamId: string; points: number }[]
+  droppedOut: { teamId: string; previousRank: number }[]
+}
+
+async function fetchApPollWeek(
+  season: number,
+  seasonType: number,
+  week: number
+): Promise<RawPollWeek | null> {
+  const res = await fetch(
+    `${RANKINGS_CORE_BASE}/${season}/types/${seasonType}/weeks/${week}/rankings/${AP_POLL_ID}?lang=en&region=us`,
+    { next: { revalidate: 3600 } }
+  )
+  if (!res.ok) return null
+  const data = await res.json()
+  if (!data.ranks?.length) return null
+
+  return {
+    weekLabel: data.occurrence?.displayValue ?? `Week ${week}`,
+    ranks: data.ranks.map((r: any) => ({
+      teamId: teamIdFromRef(r.team?.$ref),
+      rank: r.current,
+    })),
+    others: (data.others ?? []).map((r: any) => ({
+      teamId: teamIdFromRef(r.team?.$ref),
+      points: r.points,
+    })),
+    droppedOut: (data.droppedOut ?? []).map((r: any) => ({
+      teamId: teamIdFromRef(r.team?.$ref),
+      previousRank: r.previous,
+    })),
+  }
+}
+
+export interface Top25TimelineTeam {
+  id: string
+  name: string
+  abbreviation: string
+  logo: string
+  slug: string
+  color: string
+}
+
+export interface Top25BubbleTeam {
+  id: string
+  name: string
+  logo: string
+  slug: string
+  points: number
+}
+
+export interface Top25DroppedTeam {
+  id: string
+  name: string
+  logo: string
+  slug: string
+  previousRank: number
+}
+
+export interface Top25Timeline {
+  weekLabels: string[]
+  teams: Top25TimelineTeam[]
+  ranks: Record<string, (number | null)[]>
+  droppedOut: Top25DroppedTeam[]
+  others: Top25BubbleTeam[]
+}
+
+async function resolveTeamBasics(id: string): Promise<TeamListEntry | null> {
+  const res = await fetch(`${SITE_BASE}/teams/${id}`, {
+    next: { revalidate: 86400 },
+  })
+  if (!res.ok) return null
+  const data = await res.json()
+  const team = data.team
+  if (!team) return null
+
+  return {
+    id,
+    name: team.displayName ?? '',
+    abbreviation: team.abbreviation ?? '',
+    slug: team.slug ?? '',
+    logo: pickDefaultLogo(team.logos),
+    color: team.color ?? '',
+  }
+}
+
+const MAX_REGULAR_SEASON_WEEKS = 20
+
+export async function getApTop25Timeline(): Promise<Top25Timeline> {
+  const season = currentSeasonYear()
+
+  const [preseason, ...regularSeasonWeeks] = await Promise.all([
+    fetchApPollWeek(season, 1, 1),
+    ...Array.from({ length: MAX_REGULAR_SEASON_WEEKS }, (_, i) =>
+      fetchApPollWeek(season, 2, i + 1)
+    ),
+  ])
+
+  const weeks: RawPollWeek[] = []
+  if (preseason) weeks.push(preseason)
+  for (const week of regularSeasonWeeks) {
+    if (!week) break
+    weeks.push(week)
+  }
+
+  const latest = weeks.at(-1)
+  if (!latest) {
+    return { weekLabels: [], teams: [], ranks: {}, droppedOut: [], others: [] }
+  }
+
+  const allTeams = await getAllTeams()
+  const infoById = new Map<string, TeamListEntry>(
+    allTeams.map((t) => [t.id, t])
+  )
+  const currentTeamIds = latest.ranks.map((r) => r.teamId)
+
+  // A handful of real teams (a known ESPN data gap - TCU and South
+  // Carolina, at time of writing) don't show up in the bulk teams list at
+  // all. Resolve those few directly instead of showing a bare numeric id.
+  const referencedIds = new Set([
+    ...currentTeamIds,
+    ...latest.droppedOut.map((d) => d.teamId),
+    ...latest.others.map((o) => o.teamId),
+  ])
+  const missingIds = [...referencedIds].filter((id) => !infoById.has(id))
+  if (missingIds.length > 0) {
+    const resolved = await Promise.all(
+      missingIds.map((id) => resolveTeamBasics(id))
+    )
+    missingIds.forEach((id, i) => {
+      const info = resolved[i]
+      if (info) infoById.set(id, info)
+    })
+  }
+
+  const ranks: Record<string, (number | null)[]> = {}
+  for (const teamId of currentTeamIds) {
+    ranks[teamId] = weeks.map(
+      (w) => w.ranks.find((r) => r.teamId === teamId)?.rank ?? null
+    )
+  }
+
+  const teams: Top25TimelineTeam[] = currentTeamIds.map((id) => {
+    const info = infoById.get(id)
+    return {
+      id,
+      name: info?.name ?? id,
+      abbreviation: info?.abbreviation ?? id,
+      logo: info?.logo ?? '',
+      slug: info?.slug ?? '',
+      color: info?.color ?? '',
+    }
+  })
+
+  const droppedOut: Top25DroppedTeam[] = latest.droppedOut.map((d) => {
+    const info = infoById.get(d.teamId)
+    return {
+      id: d.teamId,
+      name: info?.name ?? d.teamId,
+      logo: info?.logo ?? '',
+      slug: info?.slug ?? '',
+      previousRank: d.previousRank,
+    }
+  })
+
+  const others: Top25BubbleTeam[] = latest.others
+    .map((o) => {
+      const info = infoById.get(o.teamId)
+      return {
+        id: o.teamId,
+        name: info?.name ?? o.teamId,
+        logo: info?.logo ?? '',
+        slug: info?.slug ?? '',
+        points: o.points,
+      }
+    })
+    .sort((a, b) => b.points - a.points)
+
+  return {
+    weekLabels: weeks.map((w) => w.weekLabel),
+    teams,
+    ranks,
+    droppedOut,
+    others,
+  }
+}
+
 // Most conferences return a flat standings.entries list, but a few (e.g.
 // Sun Belt) split into standings-less East/West children instead - fall
 // back to flattening those when the top-level list is empty.
