@@ -67,17 +67,17 @@ export default async function Home() {
 
   return (
     <main className="mx-auto w-full min-w-0 max-w-5xl px-4 pb-8 pt-10 sm:px-6 sm:pt-12">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-y-2 gap-x-1 sm:gap-x-2">
+        <div className="flex min-w-0 items-center gap-1.5 sm:gap-4">
           {themeTeamLogo && (
             <Image
               src={themeTeamLogo}
               alt=""
-              width={80}
-              height={80}
+              width={96}
+              height={96}
               unoptimized
               priority
-              className="h-12 w-12 shrink-0 sm:h-16 sm:w-16"
+              className="h-14 w-14 shrink-0 sm:h-20 sm:w-20"
             />
           )}
           <h1 className="min-w-0">
@@ -88,7 +88,7 @@ export default async function Home() {
               height={220}
               unoptimized
               priority
-              className="h-8 w-auto dark:hidden sm:h-11"
+              className="h-8 w-auto dark:hidden sm:h-14"
             />
             <Image
               src="/api/wordmark/dark"
@@ -97,7 +97,7 @@ export default async function Home() {
               height={220}
               unoptimized
               priority
-              className="hidden h-8 w-auto dark:block sm:h-11"
+              className="hidden h-8 w-auto dark:block sm:h-14"
             />
           </h1>
         </div>
