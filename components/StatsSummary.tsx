@@ -56,9 +56,7 @@ export function StatsSummary({
           team.standingSummary ? conferenceRank(team.standingSummary) : '—'
         }
         href={
-          team.conferenceId
-            ? `/rankings/conference/${team.conferenceId}`
-            : undefined
+          team.conferenceId ? `/conferences/${team.conferenceId}` : undefined
         }
       />
       <StatTile label="Points/game" value={team.pointsForPerGame.toFixed(1)} />

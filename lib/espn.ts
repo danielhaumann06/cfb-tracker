@@ -68,6 +68,7 @@ export interface FpiSummary {
   strengthOfScheduleRank: number | null
   probMakePlayoffs: number | null
   probWinTitle: number | null
+  probWinConference: number | null
 }
 
 function currentSeasonYear(date = new Date()): number {
@@ -188,12 +189,51 @@ export async function getLivePowerFiveGames(): Promise<LiveTickerGame[]> {
   return games
 }
 
+export interface ConferenceGame {
+  id: string
+  state: GameState
+  statusDetail: string
+  date: string
+  home: TickerTeam
+  away: TickerTeam
+}
+
+export async function getConferenceScoreboard(
+  groupId: string
+): Promise<ConferenceGame[]> {
+  const res = await fetch(`${SITE_BASE}/scoreboard?groups=${groupId}`, {
+    next: { revalidate: 30 },
+  })
+  if (!res.ok) return []
+  const data = await res.json()
+  const events = data.events ?? []
+
+  return (events as any[]).map((event) => {
+    const competition = event.competitions[0]
+    const home = competition.competitors.find(
+      (c: any) => c.homeAway === 'home'
+    )
+    const away = competition.competitors.find(
+      (c: any) => c.homeAway === 'away'
+    )
+
+    return {
+      id: event.id,
+      date: event.date,
+      home: mapTickerTeam(home),
+      away: mapTickerTeam(away),
+      ...parseStatus(competition.status),
+    }
+  })
+}
+
 export interface TeamListEntry {
   id: string
   name: string
   abbreviation: string
   slug: string
   logo: string
+  color: string
 }
 
 export async function getAllTeams(): Promise<TeamListEntry[]> {
@@ -209,6 +249,7 @@ export async function getAllTeams(): Promise<TeamListEntry[]> {
     abbreviation: entry.team.abbreviation,
     slug: entry.team.slug,
     logo: pickDefaultLogo(entry.team.logos),
+    color: entry.team.color ?? '',
   }))
 }
 
@@ -230,7 +271,13 @@ export async function getTeamSummary(espnId: string): Promise<TeamSummary> {
     abbreviation: team.abbreviation,
     record: record?.summary ?? '0-0',
     standingSummary: team.standingSummary ?? '',
-    conferenceId: team.groups?.id ?? '',
+    // Most teams' own group IS the conference (isConference: true). A
+    // divisional conference (e.g. Sun Belt's East/West) instead reports
+    // the division's own non-conference group here, with the real
+    // conference one level up as its parent - climb to it in that case.
+    conferenceId: team.groups?.isConference
+      ? team.groups.id
+      : (team.groups?.parent?.id ?? team.groups?.id ?? ''),
     color: team.color ?? '000000',
     logo: pickDefaultLogo(team.logos),
     wins: statValue('wins'),
@@ -328,6 +375,7 @@ export async function getFpiSummary(espnId: string): Promise<FpiSummary | null> 
     strengthOfScheduleRank: value('sosremainingrank'),
     probMakePlayoffs: value('probmakeplayoffs'),
     probWinTitle: value('probwintitle'),
+    probWinConference: value('probwinconf'),
   }
 }
 
@@ -373,6 +421,16 @@ export async function getNationalRankings(): Promise<{
   return { pollName: apPoll?.name ?? 'Rankings', teams }
 }
 
+// Most conferences return a flat standings.entries list, but a few (e.g.
+// Sun Belt) split into standings-less East/West children instead - fall
+// back to flattening those when the top-level list is empty.
+function extractStandingsEntries(data: any): any[] {
+  const topLevel = data.standings?.entries
+  if (topLevel?.length) return topLevel
+  const children = data.children ?? []
+  return children.flatMap((c: any) => c.standings?.entries ?? [])
+}
+
 export async function getConferenceStandings(groupId: string): Promise<{
   conferenceName: string
   teams: RankedTeam[]
@@ -382,20 +440,113 @@ export async function getConferenceStandings(groupId: string): Promise<{
   })
   if (!res.ok) return { conferenceName: 'Conference', teams: [] }
   const data = await res.json()
-  const entries = data.standings?.entries ?? []
+  const entries = extractStandingsEntries(data)
 
-  const teams: RankedTeam[] = entries.map((entry: any, i: number) => {
+  const unranked = entries.map((entry: any) => {
     const overall = entry.stats?.find((s: any) => s.name === 'overall')
+    const winPct = entry.stats?.find(
+      (s: any) => s.name === 'leagueWinPercent'
+    )
     return {
-      rank: i + 1,
       id: entry.team.id,
       name: entry.team.displayName,
       logo: pickDefaultLogo(entry.team.logos),
       record: overall?.displayValue ?? '',
+      winPct: winPct?.value ?? 0,
     }
   })
 
+  // Re-sorting by conference win percentage (rather than trusting entry
+  // order) keeps ranks correct once divisions above have been flattened
+  // together into one list.
+  unranked.sort((a: { winPct: number }, b: { winPct: number }) => b.winPct - a.winPct)
+
+  const teams: RankedTeam[] = unranked.map((t, i) => ({
+    rank: i + 1,
+    id: t.id,
+    name: t.name,
+    logo: t.logo,
+    record: t.record,
+  }))
+
   return { conferenceName: data.shortName ?? data.name ?? 'Conference', teams }
+}
+
+export interface ConferenceTimelineTeam {
+  id: string
+  name: string
+  abbreviation: string
+  logo: string
+  slug: string
+  color: string
+}
+
+export interface ConferenceTimeline {
+  teams: ConferenceTimelineTeam[]
+  weeks: number[]
+  wins: Record<string, number[]>
+}
+
+export async function getConferenceWinLossTimeline(
+  groupId: string
+): Promise<ConferenceTimeline> {
+  const [{ teams: standings }, allTeams] = await Promise.all([
+    getConferenceStandings(groupId),
+    getAllTeams(),
+  ])
+  if (standings.length === 0) return { teams: [], weeks: [], wins: {} }
+
+  const infoById = new Map(allTeams.map((t) => [t.id, t]))
+  const schedules = await Promise.all(
+    standings.map((t) =>
+      getTeamSchedule(t.id).catch(() => [] as GameSummary[])
+    )
+  )
+
+  let maxWeek = 0
+  const weekWinByTeam = standings.map((team, i) => {
+    const weekWin = new Map<number, boolean>()
+    for (const game of schedules[i]) {
+      if (game.week === null || game.state !== 'post') continue
+      const isHome = game.home.id === team.id
+      const self = isHome ? game.home : game.away
+      const opponent = isHome ? game.away : game.home
+      const selfScore = Number(self.score)
+      const oppScore = Number(opponent.score)
+      if (Number.isNaN(selfScore) || Number.isNaN(oppScore)) continue
+      weekWin.set(game.week, selfScore > oppScore)
+      maxWeek = Math.max(maxWeek, game.week)
+    }
+    return weekWin
+  })
+
+  const weeks = Array.from({ length: maxWeek }, (_, i) => i + 1)
+  const wins: Record<string, number[]> = {}
+
+  standings.forEach((team, i) => {
+    const weekWin = weekWinByTeam[i]
+    let cumulative = 0
+    wins[team.id] = weeks.map((week) => {
+      if (weekWin.get(week)) cumulative += 1
+      return cumulative
+    })
+  })
+
+  const teams: ConferenceTimelineTeam[] = standings.map((team) => ({
+    id: team.id,
+    name: team.name,
+    // A handful of teams (a known ESPN data gap) don't show up in the
+    // teams list this looks up abbreviation/slug/color from - fall back to
+    // a short label derived from the name rather than the full name.
+    abbreviation:
+      infoById.get(team.id)?.abbreviation ??
+      team.name.slice(0, 4).toUpperCase(),
+    logo: team.logo,
+    slug: infoById.get(team.id)?.slug ?? '',
+    color: infoById.get(team.id)?.color ?? '',
+  }))
+
+  return { teams, weeks, wins }
 }
 
 export interface Headline {

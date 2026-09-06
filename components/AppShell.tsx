@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { PageNav } from './PageNav'
+import { TopTabs } from './TopTabs'
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
@@ -17,6 +18,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           : { paddingBottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }
       }
     >
+      <TopTabs />
       {children}
       {!isHome && <PageNav />}
     </div>
