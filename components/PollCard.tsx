@@ -1,6 +1,35 @@
+import Link from 'next/link'
 import { RankingList } from '@/components/RankingList'
 import { PollRaceChart } from '@/components/PollRaceChart'
 import type { PollTimeline } from '@/lib/espn'
+
+function TeamNameList<T extends { id: string; slug: string }>({
+  items,
+  label,
+}: {
+  items: T[]
+  label: (item: T) => string
+}) {
+  return (
+    <>
+      {items.map((item, i) => (
+        <span key={item.id}>
+          {i > 0 && ', '}
+          {item.slug ? (
+            <Link
+              href={`/team/${item.slug}`}
+              className="underline decoration-[var(--border-hairline)] underline-offset-2 hover:decoration-current"
+            >
+              {label(item)}
+            </Link>
+          ) : (
+            label(item)
+          )}
+        </span>
+      ))}
+    </>
+  )
+}
 
 export function PollCard({
   title,
@@ -46,7 +75,10 @@ export function PollCard({
               <span className="font-medium text-[var(--foreground)]">
                 Dropped out:
               </span>{' '}
-              {timeline.droppedOut.map((t) => t.name).join(', ')}
+              <TeamNameList
+                items={timeline.droppedOut}
+                label={(t) => t.name}
+              />
             </p>
           )}
           {timeline.others.length > 0 && (
@@ -54,10 +86,10 @@ export function PollCard({
               <span className="font-medium text-[var(--foreground)]">
                 On the bubble:
               </span>{' '}
-              {timeline.others
-                .slice(0, 10)
-                .map((t) => `${t.name} (${t.points.toFixed(0)})`)
-                .join(', ')}
+              <TeamNameList
+                items={timeline.others.slice(0, 10)}
+                label={(t) => `${t.name} (${t.points.toFixed(0)})`}
+              />
             </p>
           )}
         </div>
