@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 
 function BackIcon() {
   return (
@@ -77,9 +77,7 @@ function TabButton({
 }
 
 export function PageNav() {
-  const pathname = usePathname()
   const router = useRouter()
-  const isHome = pathname === '/'
 
   return (
     <nav
@@ -88,14 +86,12 @@ export function PageNav() {
     >
       <div className="mx-auto flex max-w-5xl items-center justify-around px-2">
         <TabButton onClick={() => router.back()} label="Back" icon={<BackIcon />} />
-        {!isHome && (
-          <TabButton
-            onClick={() => router.forward()}
-            label="Forward"
-            icon={<ForwardIcon />}
-          />
-        )}
-        {!isHome && <TabButton href="/" label="Home" icon={<HomeIcon />} />}
+        <TabButton
+          onClick={() => router.forward()}
+          label="Forward"
+          icon={<ForwardIcon />}
+        />
+        <TabButton href="/" label="Home" icon={<HomeIcon />} />
       </div>
     </nav>
   )
