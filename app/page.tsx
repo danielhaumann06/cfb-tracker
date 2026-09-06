@@ -66,18 +66,18 @@ export default async function Home() {
   const slugById = new Map(allTeams.map((t) => [t.id, t.slug]))
 
   return (
-    <main className="mx-auto w-full min-w-0 max-w-5xl px-4 py-8 sm:px-6">
+    <main className="mx-auto w-full min-w-0 max-w-5xl px-4 pb-8 pt-10 sm:px-6 sm:pt-12">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-4">
           {themeTeamLogo && (
             <Image
               src={themeTeamLogo}
               alt=""
-              width={56}
-              height={56}
+              width={80}
+              height={80}
               unoptimized
               priority
-              className="h-9 w-9 shrink-0 sm:h-14 sm:w-14"
+              className="h-12 w-12 shrink-0 sm:h-16 sm:w-16"
             />
           )}
           <h1 className="min-w-0">
@@ -88,7 +88,7 @@ export default async function Home() {
               height={220}
               unoptimized
               priority
-              className="h-6 w-auto dark:hidden sm:h-9"
+              className="h-8 w-auto dark:hidden sm:h-11"
             />
             <Image
               src="/api/wordmark/dark"
@@ -97,7 +97,7 @@ export default async function Home() {
               height={220}
               unoptimized
               priority
-              className="hidden h-6 w-auto dark:block sm:h-9"
+              className="hidden h-8 w-auto dark:block sm:h-11"
             />
           </h1>
         </div>

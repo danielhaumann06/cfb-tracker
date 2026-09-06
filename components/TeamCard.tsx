@@ -25,12 +25,9 @@ export function TeamCard({
   odds: GameOdds | null
   fpi: FpiSummary | null
 }) {
-  const opponent = next
-    ? next.home.id === team.id
-      ? next.away
-      : next.home
-    : null
   const isHome = next ? next.home.id === team.id : false
+  const opponent = next ? (isHome ? next.away : next.home) : null
+  const self = next ? (isHome ? next.home : next.away) : null
 
   return (
     <Link
@@ -69,7 +66,11 @@ export function TeamCard({
             </div>
             <div className="flex justify-between gap-2">
               <dt className="text-[var(--text-muted)]">
-                {next.state === 'post' ? 'Result' : 'Kickoff'}
+                {next.state === 'pre'
+                  ? 'Kickoff'
+                  : next.state === 'in'
+                    ? 'Status'
+                    : 'Result'}
               </dt>
               <dd className="text-right">
                 {next.state === 'pre'
@@ -77,6 +78,16 @@ export function TeamCard({
                   : next.statusDetail}
               </dd>
             </div>
+            {next.state === 'in' && self && opponent && (
+              <div className="flex justify-between gap-2">
+                <dt className="text-[var(--text-muted)]">Score</dt>
+                <dd className="text-right font-medium">
+                  {self.abbreviation} {self.score ?? 0}
+                  <span className="text-[var(--text-muted)]"> &ndash; </span>
+                  {opponent.abbreviation} {opponent.score ?? 0}
+                </dd>
+              </div>
+            )}
             {odds?.details && next.state === 'pre' && (
               <div className="flex justify-between gap-2">
                 <dt className="text-[var(--text-muted)]">Spread</dt>
