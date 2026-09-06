@@ -5,10 +5,12 @@ import { TeamTotalsTable } from '@/components/TeamTotalsTable'
 import { PlayerStatsSection } from '@/components/PlayerStatsSection'
 import { GameScoreBar } from '@/components/GameScoreBar'
 import { GameSummary } from '@/components/GameSummary'
+import { HighlightReel } from '@/components/HighlightReel'
 import {
   getGameLiveStatus,
   getGameBoxscore,
   getGameArticle,
+  getGameHighlights,
 } from '@/lib/espn'
 
 export default async function GamePage({
@@ -21,11 +23,13 @@ export default async function GamePage({
   let status
   let boxscore
   let article
+  let highlights
   try {
-    ;[status, boxscore, article] = await Promise.all([
+    ;[status, boxscore, article, highlights] = await Promise.all([
       getGameLiveStatus(eventId),
       getGameBoxscore(eventId),
       getGameArticle(eventId),
+      getGameHighlights(eventId),
     ])
   } catch {
     notFound()
@@ -64,6 +68,12 @@ export default async function GamePage({
       {article && (
         <div className="mt-6">
           <GameSummary article={article} />
+        </div>
+      )}
+
+      {highlights.length > 0 && (
+        <div className="mt-6">
+          <HighlightReel highlights={highlights} />
         </div>
       )}
 

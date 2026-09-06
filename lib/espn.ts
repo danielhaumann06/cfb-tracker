@@ -530,6 +530,35 @@ export async function getGameArticle(
   }
 }
 
+export interface GameHighlight {
+  id: number
+  headline: string
+  duration: number
+  thumbnail: string
+  hlsUrl: string
+}
+
+export async function getGameHighlights(
+  eventId: string
+): Promise<GameHighlight[]> {
+  const res = await fetch(`${SITE_BASE}/summary?event=${eventId}`, {
+    next: { revalidate: 300 },
+  })
+  if (!res.ok) return []
+  const data = await res.json()
+  const videos = data.videos ?? []
+
+  return videos
+    .map((v: any) => ({
+      id: v.id,
+      headline: v.headline ?? '',
+      duration: v.duration ?? 0,
+      thumbnail: v.thumbnail ?? '',
+      hlsUrl: v.links?.source?.HLS?.href ?? '',
+    }))
+    .filter((v: GameHighlight) => v.headline && v.hlsUrl)
+}
+
 export async function getGameBoxscore(
   eventId: string
 ): Promise<GameBoxscore | null> {
