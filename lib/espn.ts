@@ -351,7 +351,7 @@ export async function getTeamNews(
         h.url &&
         terms.some((t) => h.headline.toLowerCase().includes(t))
     )
-    .slice(0, 5)
+    .slice(0, 2)
 }
 
 export interface TeamBoxscore {
@@ -392,6 +392,28 @@ export function groupPlayerCategories(categories: PlayerCategory[]) {
     specialTeams: categories.filter((c) =>
       SPECIAL_TEAMS_CATEGORIES.includes(c.name)
     ),
+  }
+}
+
+export interface GameArticle {
+  headline: string
+  summary: string
+}
+
+export async function getGameArticle(
+  eventId: string
+): Promise<GameArticle | null> {
+  const res = await fetch(`${SITE_BASE}/summary?event=${eventId}`, {
+    next: { revalidate: 60 },
+  })
+  if (!res.ok) return null
+  const data = await res.json()
+  const article = data.article
+  if (!article?.description) return null
+
+  return {
+    headline: article.headline ?? '',
+    summary: article.description,
   }
 }
 

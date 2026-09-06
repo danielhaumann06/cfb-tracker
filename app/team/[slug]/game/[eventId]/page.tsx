@@ -4,7 +4,12 @@ import { LiveGameStats } from '@/components/LiveGameStats'
 import { TeamTotalsTable } from '@/components/TeamTotalsTable'
 import { PlayerStatsSection } from '@/components/PlayerStatsSection'
 import { GameScoreBar } from '@/components/GameScoreBar'
-import { getGameLiveStatus, getGameBoxscore } from '@/lib/espn'
+import { GameSummary } from '@/components/GameSummary'
+import {
+  getGameLiveStatus,
+  getGameBoxscore,
+  getGameArticle,
+} from '@/lib/espn'
 
 export default async function GamePage({
   params,
@@ -15,10 +20,12 @@ export default async function GamePage({
 
   let status
   let boxscore
+  let article
   try {
-    ;[status, boxscore] = await Promise.all([
+    ;[status, boxscore, article] = await Promise.all([
       getGameLiveStatus(eventId),
       getGameBoxscore(eventId),
+      getGameArticle(eventId),
     ])
   } catch {
     notFound()
@@ -53,6 +60,12 @@ export default async function GamePage({
           {status.home.nickname}
         </span>
       </h1>
+
+      {article && (
+        <div className="mt-6">
+          <GameSummary article={article} />
+        </div>
+      )}
 
       <div className="mt-6">
         {status.state === 'in' ? (
