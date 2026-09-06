@@ -333,9 +333,7 @@ export function SettingsMenu({
                   </div>
                   <p className="mt-2 text-xs text-[var(--text-muted)]">
                     Recolors the app to match and puts this team&rsquo;s logo
-                    next to the header. It also updates your Home Screen icon
-                    — remove and re-add the app in Safari to see that change
-                    (iOS caches icons per device).
+                    next to the header.
                   </p>
                 </>
               ) : (

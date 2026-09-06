@@ -1,16 +1,15 @@
 import { ImageResponse } from 'next/og'
-import { cookies } from 'next/headers'
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import { PNG } from 'pngjs'
-import { THEME_TEAM_COOKIE, parseThemeTeamCookie } from '@/lib/teams'
-import { getTeamSummary } from '@/lib/espn'
 
-// next/og's ImageResponse (Satori) fails to decode some team logos' alpha
-// channels, silently rendering nothing. Flattening onto an opaque white
-// background ourselves first sidesteps that decoder bug entirely and also
-// avoids logos with transparent (rather than opaque white) negative space
-// disappearing against a same-colored background.
-function flattenOnWhite(buffer: ArrayBuffer): Buffer {
-  const png = PNG.sync.read(Buffer.from(buffer))
+// next/og's ImageResponse (Satori) fails to decode some PNGs' alpha channels,
+// silently rendering nothing. Flattening onto an opaque white background
+// ourselves first sidesteps that decoder bug entirely and also avoids logos
+// whose negative space is transparent (rather than opaque white) disappearing
+// against a same-colored background.
+function flattenOnWhite(buffer: Buffer): Buffer {
+  const png = PNG.sync.read(buffer)
   const { width, height, data } = png
   const out = new PNG({ width, height })
 
@@ -26,18 +25,16 @@ function flattenOnWhite(buffer: ArrayBuffer): Buffer {
   return PNG.sync.write(out)
 }
 
-async function logoDataUri(logoUrl: string): Promise<string> {
-  const res = await fetch(logoUrl, { next: { revalidate: 3600 } })
-  const flattened = flattenOnWhite(await res.arrayBuffer())
-  return `data:image/png;base64,${flattened.toString('base64')}`
-}
+const CFP_LOGO_WIDTH = 500
+const CFP_LOGO_HEIGHT = 561
+const CFP_LOGO_ASPECT = CFP_LOGO_WIDTH / CFP_LOGO_HEIGHT
 
-export async function buildTeamIcon(size: number) {
-  const cookieStore = await cookies()
-  const teamId = parseThemeTeamCookie(cookieStore.get(THEME_TEAM_COOKIE)?.value)
-  const team = await getTeamSummary(teamId)
-  const logo = team.logo ? await logoDataUri(team.logo) : null
-  const inner = Math.round(size * 0.72)
+const cfpLogoBuffer = await readFile(join(process.cwd(), 'assets/cfp-logo.png'))
+const cfpLogoDataUri = `data:image/png;base64,${flattenOnWhite(cfpLogoBuffer).toString('base64')}`
+
+export async function buildAppIcon(size: number) {
+  const innerHeight = Math.round(size * 0.72)
+  const innerWidth = Math.round(innerHeight * CFP_LOGO_ASPECT)
 
   return new ImageResponse(
     (
@@ -51,10 +48,10 @@ export async function buildTeamIcon(size: number) {
           background: '#ffffff',
         }}
       >
-        {logo && (
+        {
           // eslint-disable-next-line @next/next/no-img-element -- ImageResponse requires a plain <img>
-          <img src={logo} width={inner} height={inner} alt="" />
-        )}
+          <img src={cfpLogoDataUri} width={innerWidth} height={innerHeight} alt="" />
+        }
       </div>
     ),
     { width: size, height: size }
