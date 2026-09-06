@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers'
 import Image from 'next/image'
+import type { ReactNode } from 'react'
 import { TeamCard } from '@/components/TeamCard'
 import { PlayoffOddsTracker } from '@/components/PlayoffOddsTracker'
 import { SettingsMenu } from '@/components/SettingsMenu'
@@ -12,6 +13,10 @@ import {
   parseThemeTeamCookie,
   type TrackedTeam,
 } from '@/lib/teams'
+import {
+  DASHBOARD_ORDER_COOKIE,
+  parseDashboardOrderCookie,
+} from '@/lib/dashboardOrder'
 import {
   getTeamSummary,
   getTeamSchedule,
@@ -64,6 +69,83 @@ export default async function Home() {
       getLivePowerFourGames(),
     ])
   const slugById = new Map(allTeams.map((t) => [t.id, t.slug]))
+  const dashboardOrder = parseDashboardOrderCookie(
+    cookieStore.get(DASHBOARD_ORDER_COOKIE)?.value,
+    trackedTeams.map((t) => t.id)
+  )
+
+  const teamById = new Map(teams.map((t) => [t.team.id, t]))
+  const dashboardSections: ReactNode[] = []
+  let pendingTeamCards: ReactNode[] = []
+
+  function flushTeamCards() {
+    if (pendingTeamCards.length === 0) return
+    dashboardSections.push(
+      <div
+        key={`team-grid-${dashboardSections.length}`}
+        className="mt-6 grid gap-4 sm:grid-cols-2"
+      >
+        {pendingTeamCards}
+      </div>
+    )
+    pendingTeamCards = []
+  }
+
+  for (const item of dashboardOrder) {
+    if (item.type === 'team') {
+      const bundle = teamById.get(item.id)
+      if (!bundle) continue
+      pendingTeamCards.push(
+        <TeamCard
+          key={bundle.slug}
+          slug={bundle.slug}
+          team={bundle.team}
+          next={bundle.next}
+          odds={bundle.odds}
+          fpi={bundle.fpi}
+        />
+      )
+      continue
+    }
+
+    flushTeamCards()
+
+    if (item.key === 'liveTicker') {
+      dashboardSections.push(
+        <div key="liveTicker" className="mt-6">
+          <LiveTicker initialGames={liveGames} />
+        </div>
+      )
+    } else if (item.key === 'playoffOdds') {
+      if (teams.length > 0) {
+        dashboardSections.push(
+          <div key="playoffOdds" className="mt-6">
+            <PlayoffOddsTracker
+              teams={teams.map(({ slug, team, fpi }) => ({
+                slug,
+                name: team.name,
+                logo: team.logo,
+                probMakePlayoffs: fpi?.probMakePlayoffs ?? null,
+              }))}
+            />
+          </div>
+        )
+      }
+    } else if (item.key === 'rankings') {
+      dashboardSections.push(
+        <section key="rankings" className="mt-6">
+          <h2 className="mb-3 font-semibold">{pollName}</h2>
+          <RankingList
+            entries={nationalRankings.map((t) => ({
+              ...t,
+              slug: slugById.get(t.id),
+            }))}
+          />
+        </section>
+      )
+    }
+  }
+  flushTeamCards()
 
   return (
     <main className="mx-auto w-full min-w-0 max-w-5xl px-4 pb-8 pt-10 sm:px-6 sm:pt-12">
@@ -110,56 +192,17 @@ export default async function Home() {
             logo: team.logo,
           }))}
           themeTeamId={themeTeamId}
+          dashboardOrder={dashboardOrder}
         />
       </div>
 
-      <div className="mt-6">
-        <LiveTicker initialGames={liveGames} />
-      </div>
-
       {teams.length === 0 && (
-        <p className="mt-1 text-[var(--text-secondary)]">
+        <p className="mt-6 text-[var(--text-secondary)]">
           No teams tracked yet — add one below.
         </p>
       )}
 
-      {teams.length > 0 && (
-        <>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            {teams.map(({ slug, team, next, odds, fpi }) => (
-              <TeamCard
-                key={slug}
-                slug={slug}
-                team={team}
-                next={next}
-                odds={odds}
-                fpi={fpi}
-              />
-            ))}
-          </div>
-
-          <div className="mt-6">
-            <PlayoffOddsTracker
-              teams={teams.map(({ slug, team, fpi }) => ({
-                slug,
-                name: team.name,
-                logo: team.logo,
-                probMakePlayoffs: fpi?.probMakePlayoffs ?? null,
-              }))}
-            />
-          </div>
-        </>
-      )}
-
-      <section className="mt-6">
-        <h2 className="mb-3 font-semibold">{pollName}</h2>
-        <RankingList
-          entries={nationalRankings.map((t) => ({
-            ...t,
-            slug: slugById.get(t.id),
-          }))}
-        />
-      </section>
+      {dashboardSections}
     </main>
   )
 }

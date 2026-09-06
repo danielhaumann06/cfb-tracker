@@ -3,7 +3,9 @@
 import Image from 'next/image'
 import { useMemo, useState, useTransition } from 'react'
 import { updateTrackedTeams, setThemeTeam } from '@/app/actions'
+import { ReorderPanel } from '@/components/ReorderPanel'
 import type { TrackedTeam } from '@/lib/teams'
+import type { DashboardItem } from '@/lib/dashboardOrder'
 
 interface TeamOption {
   id: string
@@ -13,7 +15,7 @@ interface TeamOption {
   logo: string
 }
 
-type View = 'closed' | 'menu' | 'teams' | 'theme'
+type View = 'closed' | 'menu' | 'teams' | 'theme' | 'reorder'
 
 function MenuIcon() {
   return (
@@ -66,10 +68,12 @@ export function SettingsMenu({
   trackedTeams,
   trackedTeamOptions,
   themeTeamId,
+  dashboardOrder,
 }: {
   trackedTeams: TrackedTeam[]
   trackedTeamOptions: TeamOption[]
   themeTeamId: string
+  dashboardOrder: DashboardItem[]
 }) {
   const [view, setView] = useState<View>('closed')
   const [pending, setPending] = useState<TrackedTeam[]>(trackedTeams)
@@ -139,6 +143,11 @@ export function SettingsMenu({
     })
   }
 
+  const teamNames = useMemo(
+    () => new Map(trackedTeamOptions.map((t) => [t.id, t.name])),
+    [trackedTeamOptions]
+  )
+
   const pendingNames = pending.map(
     (t) =>
       trackedTeamOptions.find((o) => o.id === t.id)?.name ??
@@ -181,6 +190,13 @@ export function SettingsMenu({
                   className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--background)]"
                 >
                   Theme
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setView('reorder')}
+                  className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--background)]"
+                >
+                  Reorder Dashboard
                 </button>
               </div>
             </>
@@ -341,6 +357,17 @@ export function SettingsMenu({
                   Track at least one team to pick a theme.
                 </p>
               )}
+            </>
+          )}
+
+          {view === 'reorder' && (
+            <>
+              <PanelHeader
+                title="Reorder Dashboard"
+                onBack={() => setView('menu')}
+                onClose={() => setView('closed')}
+              />
+              <ReorderPanel initialOrder={dashboardOrder} teamNames={teamNames} />
             </>
           )}
         </section>
