@@ -113,8 +113,8 @@ function mapCompetitor(competitor: any): GameTeam {
   }
 }
 
-// ACC, Big 12, Big Ten, SEC - the "Power Four" conference group ids.
-const POWER_FOUR_GROUPS = ['1', '4', '5', '8']
+// ACC, Big 12, Big Ten, SEC, Pac-12 - the "Power Five" conference group ids.
+const POWER_FIVE_GROUPS = ['1', '4', '5', '8', '9']
 
 export interface TickerTeam {
   name: string
@@ -142,9 +142,9 @@ function mapTickerTeam(competitor: any): TickerTeam {
   }
 }
 
-export async function getLivePowerFourGames(): Promise<LiveTickerGame[]> {
+export async function getLivePowerFiveGames(): Promise<LiveTickerGame[]> {
   const results = await Promise.all(
-    POWER_FOUR_GROUPS.map(async (group) => {
+    POWER_FIVE_GROUPS.map(async (group) => {
       const res = await fetch(`${SITE_BASE}/scoreboard?groups=${group}`, {
         next: { revalidate: 30 },
       })

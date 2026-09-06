@@ -24,7 +24,7 @@ import {
   getFpiSummary,
   getNationalRankings,
   getAllTeams,
-  getLivePowerFourGames,
+  getLivePowerFiveGames,
   nextGame,
 } from '@/lib/espn'
 
@@ -66,7 +66,7 @@ export default async function Home() {
     await Promise.all([
       getNationalRankings(),
       getAllTeams(),
-      getLivePowerFourGames(),
+      getLivePowerFiveGames(),
     ])
   const slugById = new Map(allTeams.map((t) => [t.id, t.slug]))
   const dashboardOrder = parseDashboardOrderCookie(
