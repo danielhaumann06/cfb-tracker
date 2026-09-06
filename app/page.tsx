@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { TeamCard } from '@/components/TeamCard'
 import { PlayoffOddsTracker } from '@/components/PlayoffOddsTracker'
 import { SettingsMenu } from '@/components/SettingsMenu'
+import { RankingList } from '@/components/RankingList'
 import {
   TRACKED_TEAMS_COOKIE,
   THEME_TEAM_COOKIE,
@@ -15,6 +16,8 @@ import {
   getTeamSchedule,
   getGameOdds,
   getFpiSummary,
+  getNationalRankings,
+  getAllTeams,
   nextGame,
 } from '@/lib/espn'
 
@@ -52,6 +55,11 @@ export default async function Home() {
   const themeTeamLogo =
     teams.find(({ team }) => team.id === themeTeamId)?.team.logo ??
     (await getTeamSummary(themeTeamId).catch(() => null))?.logo
+  const [{ pollName, teams: nationalRankings }, allTeams] = await Promise.all([
+    getNationalRankings(),
+    getAllTeams(),
+  ])
+  const slugById = new Map(allTeams.map((t) => [t.id, t.slug]))
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
@@ -133,6 +141,16 @@ export default async function Home() {
           </div>
         </>
       )}
+
+      <section className="mt-6">
+        <h2 className="mb-3 font-semibold">{pollName}</h2>
+        <RankingList
+          entries={nationalRankings.map((t) => ({
+            ...t,
+            slug: slugById.get(t.id),
+          }))}
+        />
+      </section>
     </main>
   )
 }
