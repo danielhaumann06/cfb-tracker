@@ -9,15 +9,31 @@ function StatTile({ label, value }: { label: string; value: string }) {
   )
 }
 
+function conferenceRank(standingSummary: string): string {
+  return standingSummary.match(/^(\d+\w*)/)?.[1] ?? standingSummary
+}
+
 export function StatsSummary({
   team,
   fpi,
+  nationalRank,
 }: {
   team: TeamSummary
   fpi: FpiSummary | null
+  nationalRank: number | null
 }) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <StatTile
+        label="National rank"
+        value={nationalRank != null ? `#${nationalRank}` : 'NR'}
+      />
+      <StatTile
+        label="Conference rank"
+        value={
+          team.standingSummary ? conferenceRank(team.standingSummary) : '—'
+        }
+      />
       <StatTile label="Points/game" value={team.pointsForPerGame.toFixed(1)} />
       <StatTile
         label="Points allowed/game"

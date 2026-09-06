@@ -246,6 +246,43 @@ export async function getFpiSummary(espnId: string): Promise<FpiSummary | null> 
   }
 }
 
+export async function getNationalRank(espnId: string): Promise<number | null> {
+  const res = await fetch(`${SITE_BASE}/rankings`, {
+    next: { revalidate: 3600 },
+  })
+  if (!res.ok) return null
+  const data = await res.json()
+  const apPoll =
+    data.rankings?.find((p: any) => p.name === 'AP Top 25') ??
+    data.rankings?.[0]
+  const entry = apPoll?.ranks?.find((r: any) => r.team?.id === espnId)
+  return entry?.current ?? null
+}
+
+export interface Headline {
+  headline: string
+  url: string
+  published: string
+}
+
+export async function getTeamNews(espnId: string): Promise<Headline[]> {
+  const res = await fetch(`${SITE_BASE}/news?team=${espnId}`, {
+    next: { revalidate: 900 },
+  })
+  if (!res.ok) return []
+  const data = await res.json()
+  const articles = data.articles ?? []
+
+  return articles
+    .map((a: any) => ({
+      headline: a.headline as string,
+      url: (a.links?.web?.href ?? '') as string,
+      published: a.published as string,
+    }))
+    .filter((h: Headline) => h.headline && h.url)
+    .slice(0, 5)
+}
+
 export interface TeamBoxscore {
   teamId: string
   teamName: string

@@ -133,19 +133,6 @@ export default async function Home() {
           </div>
         </>
       )}
-
-      <div className="mt-6">
-        <SettingsMenu
-          trackedTeams={trackedTeams}
-          trackedTeamOptions={teams.map(({ team, slug }) => ({
-            id: team.id,
-            slug,
-            name: team.name,
-            logo: team.logo,
-          }))}
-          themeTeamId={themeTeamId}
-        />
-      </div>
     </main>
   )
 }

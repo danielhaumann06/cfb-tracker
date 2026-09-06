@@ -146,6 +146,9 @@ export function SettingsMenu({
       t.slug
   )
 
+  const panelWidth =
+    view === 'menu' ? 'w-48' : 'w-[min(18rem,calc(100vw-2rem))]'
+
   return (
     <div className="relative shrink-0">
       <button
@@ -158,7 +161,9 @@ export function SettingsMenu({
       </button>
 
       {view !== 'closed' && (
-        <section className="absolute right-0 top-full z-30 mt-2 max-h-[75vh] w-[min(22rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-5 shadow-[var(--shadow-card-hover)]">
+        <section
+          className={`absolute right-0 top-full z-30 mt-2 max-h-[75vh] ${panelWidth} overflow-y-auto rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-4 shadow-[var(--shadow-card-hover)]`}
+        >
           {view === 'menu' && (
             <>
               <PanelHeader title="Menu" onClose={() => setView('closed')} />

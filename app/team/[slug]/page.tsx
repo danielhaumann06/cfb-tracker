@@ -4,12 +4,15 @@ import { notFound } from 'next/navigation'
 import { LiveScoreBadge } from '@/components/LiveScoreBadge'
 import { ScheduleTable } from '@/components/ScheduleTable'
 import { StatsSummary } from '@/components/StatsSummary'
+import { Headlines } from '@/components/Headlines'
 import { TRACKED_TEAMS_COOKIE, parseTrackedTeamsCookie } from '@/lib/teams'
 import {
   getTeamSummary,
   getTeamSchedule,
   getGameOdds,
   getFpiSummary,
+  getNationalRank,
+  getTeamNews,
   nextGame,
   type GameOdds,
 } from '@/lib/espn'
@@ -37,12 +40,14 @@ export default async function TeamPage({
   const tracked = trackedTeams.find((t) => t.slug === slug)
   if (!tracked) notFound()
 
-  let team, schedule, fpi
+  let team, schedule, fpi, nationalRank, news
   try {
-    ;[team, schedule, fpi] = await Promise.all([
+    ;[team, schedule, fpi, nationalRank, news] = await Promise.all([
       getTeamSummary(tracked.id),
       getTeamSchedule(tracked.id),
       getFpiSummary(tracked.id),
+      getNationalRank(tracked.id),
+      getTeamNews(tracked.id),
     ])
   } catch {
     notFound()
@@ -81,8 +86,15 @@ export default async function TeamPage({
 
       <section className="mt-6">
         <h2 className="mb-3 font-semibold">Stats</h2>
-        <StatsSummary team={team} fpi={fpi} />
+        <StatsSummary team={team} fpi={fpi} nationalRank={nationalRank} />
       </section>
+
+      {news.length > 0 && (
+        <section className="mt-6">
+          <h2 className="mb-3 font-semibold">Headlines</h2>
+          <Headlines items={news} />
+        </section>
+      )}
 
       <section className="mt-6">
         <h2 className="mb-3 font-semibold">Schedule</h2>
