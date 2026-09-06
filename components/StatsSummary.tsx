@@ -1,12 +1,33 @@
+import Link from 'next/link'
 import type { TeamSummary, FpiSummary } from '@/lib/espn'
 
-function StatTile({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-[var(--border-hairline)] bg-[var(--surface-1)] p-3 shadow-[var(--shadow-card)]">
+function StatTile({
+  label,
+  value,
+  href,
+}: {
+  label: string
+  value: string
+  href?: string
+}) {
+  const content = (
+    <>
       <p className="text-xs text-[var(--text-muted)]">{label}</p>
       <p className="text-lg font-semibold">{value}</p>
-    </div>
+    </>
   )
+  const className =
+    'rounded-lg border border-[var(--border-hairline)] bg-[var(--surface-1)] p-3 shadow-[var(--shadow-card)]'
+
+  if (href) {
+    return (
+      <Link href={href} className={`${className} block hover:border-[var(--seq-fill)]`}>
+        {content}
+      </Link>
+    )
+  }
+
+  return <div className={className}>{content}</div>
 }
 
 function conferenceRank(standingSummary: string): string {
@@ -27,11 +48,17 @@ export function StatsSummary({
       <StatTile
         label="National rank"
         value={nationalRank != null ? `#${nationalRank}` : 'NR'}
+        href="/rankings/national"
       />
       <StatTile
         label="Conference rank"
         value={
           team.standingSummary ? conferenceRank(team.standingSummary) : '—'
+        }
+        href={
+          team.conferenceId
+            ? `/rankings/conference/${team.conferenceId}`
+            : undefined
         }
       />
       <StatTile label="Points/game" value={team.pointsForPerGame.toFixed(1)} />

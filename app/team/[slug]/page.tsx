@@ -13,6 +13,7 @@ import {
   getFpiSummary,
   getNationalRank,
   getTeamNews,
+  getAllTeams,
   nextGame,
   type GameOdds,
 } from '@/lib/espn'
@@ -37,21 +38,25 @@ export default async function TeamPage({
   const trackedTeams = parseTrackedTeamsCookie(
     cookieStore.get(TRACKED_TEAMS_COOKIE)?.value
   )
-  const tracked = trackedTeams.find((t) => t.slug === slug)
-  if (!tracked) notFound()
+  let teamId = trackedTeams.find((t) => t.slug === slug)?.id
+  if (!teamId) {
+    const allTeams = await getAllTeams()
+    teamId = allTeams.find((t) => t.slug === slug)?.id
+  }
+  if (!teamId) notFound()
 
-  let team, schedule, fpi, nationalRank, news
+  let team, schedule, fpi, nationalRank
   try {
-    ;[team, schedule, fpi, nationalRank, news] = await Promise.all([
-      getTeamSummary(tracked.id),
-      getTeamSchedule(tracked.id),
-      getFpiSummary(tracked.id),
-      getNationalRank(tracked.id),
-      getTeamNews(tracked.id),
+    ;[team, schedule, fpi, nationalRank] = await Promise.all([
+      getTeamSummary(teamId),
+      getTeamSchedule(teamId),
+      getFpiSummary(teamId),
+      getNationalRank(teamId),
     ])
   } catch {
     notFound()
   }
+  const news = await getTeamNews(teamId, [team.location, team.nickname])
   const current = nextGame(schedule)
   const oddsByGameId = await getUpcomingOdds(schedule)
 

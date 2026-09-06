@@ -4,13 +4,18 @@ const SITE_BASE =
   'https://site.api.espn.com/apis/site/v2/sports/football/college-football'
 const CORE_BASE =
   'https://sports.core.api.espn.com/v2/sports/football/leagues/college-football'
+const STANDINGS_BASE =
+  'https://site.api.espn.com/apis/v2/sports/football/college-football/standings'
 
 export interface TeamSummary {
   id: string
   name: string
+  location: string
+  nickname: string
   abbreviation: string
   record: string
   standingSummary: string
+  conferenceId: string
   color: string
   logo: string
   wins: number
@@ -144,9 +149,12 @@ export async function getTeamSummary(espnId: string): Promise<TeamSummary> {
   return {
     id: team.id,
     name: team.displayName,
+    location: team.location ?? team.displayName,
+    nickname: team.name ?? team.displayName,
     abbreviation: team.abbreviation,
     record: record?.summary ?? '0-0',
     standingSummary: team.standingSummary ?? '',
+    conferenceId: team.groups?.id ?? '',
     color: team.color ?? '000000',
     logo: pickDefaultLogo(team.logos),
     wins: statValue('wins'),
@@ -246,17 +254,71 @@ export async function getFpiSummary(espnId: string): Promise<FpiSummary | null> 
   }
 }
 
-export async function getNationalRank(espnId: string): Promise<number | null> {
+async function getApPoll(): Promise<any> {
   const res = await fetch(`${SITE_BASE}/rankings`, {
     next: { revalidate: 3600 },
   })
   if (!res.ok) return null
   const data = await res.json()
-  const apPoll =
+  return (
     data.rankings?.find((p: any) => p.name === 'AP Top 25') ??
-    data.rankings?.[0]
+    data.rankings?.[0] ??
+    null
+  )
+}
+
+export async function getNationalRank(espnId: string): Promise<number | null> {
+  const apPoll = await getApPoll()
   const entry = apPoll?.ranks?.find((r: any) => r.team?.id === espnId)
   return entry?.current ?? null
+}
+
+export interface RankedTeam {
+  rank: number
+  id: string
+  name: string
+  logo: string
+  record: string
+}
+
+export async function getNationalRankings(): Promise<{
+  pollName: string
+  teams: RankedTeam[]
+}> {
+  const apPoll = await getApPoll()
+  const teams: RankedTeam[] = (apPoll?.ranks ?? []).map((r: any) => ({
+    rank: r.current,
+    id: r.team.id,
+    name: r.team.displayName ?? `${r.team.location} ${r.team.name}`,
+    logo: pickDefaultLogo(r.team.logos),
+    record: r.recordSummary ?? '',
+  }))
+  return { pollName: apPoll?.name ?? 'Rankings', teams }
+}
+
+export async function getConferenceStandings(groupId: string): Promise<{
+  conferenceName: string
+  teams: RankedTeam[]
+}> {
+  const res = await fetch(`${STANDINGS_BASE}?group=${groupId}`, {
+    next: { revalidate: 3600 },
+  })
+  if (!res.ok) return { conferenceName: 'Conference', teams: [] }
+  const data = await res.json()
+  const entries = data.standings?.entries ?? []
+
+  const teams: RankedTeam[] = entries.map((entry: any, i: number) => {
+    const overall = entry.stats?.find((s: any) => s.name === 'overall')
+    return {
+      rank: i + 1,
+      id: entry.team.id,
+      name: entry.team.displayName,
+      logo: pickDefaultLogo(entry.team.logos),
+      record: overall?.displayValue ?? '',
+    }
+  })
+
+  return { conferenceName: data.shortName ?? data.name ?? 'Conference', teams }
 }
 
 export interface Headline {
@@ -265,13 +327,17 @@ export interface Headline {
   published: string
 }
 
-export async function getTeamNews(espnId: string): Promise<Headline[]> {
+export async function getTeamNews(
+  espnId: string,
+  matchTerms: string[]
+): Promise<Headline[]> {
   const res = await fetch(`${SITE_BASE}/news?team=${espnId}`, {
     next: { revalidate: 900 },
   })
   if (!res.ok) return []
   const data = await res.json()
   const articles = data.articles ?? []
+  const terms = matchTerms.filter(Boolean).map((t) => t.toLowerCase())
 
   return articles
     .map((a: any) => ({
@@ -279,7 +345,12 @@ export async function getTeamNews(espnId: string): Promise<Headline[]> {
       url: (a.links?.web?.href ?? '') as string,
       published: a.published as string,
     }))
-    .filter((h: Headline) => h.headline && h.url)
+    .filter(
+      (h: Headline) =>
+        h.headline &&
+        h.url &&
+        terms.some((t) => h.headline.toLowerCase().includes(t))
+    )
     .slice(0, 5)
 }
 
