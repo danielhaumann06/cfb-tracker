@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { TeamCard } from '@/components/TeamCard'
 import { PlayoffOddsTracker } from '@/components/PlayoffOddsTracker'
 import { SettingsMenu } from '@/components/SettingsMenu'
+import { RankingList } from '@/components/RankingList'
 import { Top25RaceChart } from '@/components/Top25RaceChart'
 import { LiveTicker } from '@/components/LiveTicker'
 import {
@@ -133,18 +134,31 @@ export default async function Home() {
         )
       }
     } else if (item.key === 'rankings') {
+      const top25SlugById = new Map(
+        top25Timeline.teams.map((t) => [t.id, t.slug])
+      )
       dashboardSections.push(
-        <section
-          key="rankings"
-          className="mt-6 rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-5 shadow-[var(--shadow-card)]"
-        >
-          <h2 className="font-semibold">AP Top 25</h2>
-          <p className="text-sm text-[var(--text-muted)]">
-            Rank by week for every currently ranked team
-          </p>
-          <div className="mt-4">
-            <Top25RaceChart timeline={top25Timeline} />
-          </div>
+        <section key="rankings" className="mt-6">
+          <h2 className="mb-3 font-semibold">AP Top 25</h2>
+          <RankingList
+            entries={nationalRankings.map((t) => ({
+              ...t,
+              slug: top25SlugById.get(t.id),
+            }))}
+          />
+
+          <details className="group mt-4 rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] shadow-[var(--shadow-card)]">
+            <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-semibold [&::-webkit-details-marker]:hidden">
+              Rank by Week
+              <span className="text-[var(--text-muted)] transition-transform group-open:rotate-180">
+                &darr;
+              </span>
+            </summary>
+            <div className="border-t border-[var(--gridline)] px-4 py-3">
+              <Top25RaceChart timeline={top25Timeline} />
+            </div>
+          </details>
+
           {(top25Timeline.droppedOut.length > 0 ||
             top25Timeline.others.length > 0) && (
             <div className="mt-4 space-y-2 text-sm text-[var(--text-secondary)]">
