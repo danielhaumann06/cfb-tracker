@@ -12,6 +12,11 @@ import {
   serializeDashboardOrder,
   type DashboardItem,
 } from '@/lib/dashboardOrder'
+import {
+  CONFERENCE_LAYOUT_COOKIE,
+  serializeConferenceLayout,
+  type ConferenceSectionKey,
+} from '@/lib/conferenceLayout'
 
 const ONE_YEAR = 60 * 60 * 24 * 365
 
@@ -34,6 +39,14 @@ export async function setThemeTeam(id: string) {
 export async function updateDashboardOrder(items: DashboardItem[]) {
   const cookieStore = await cookies()
   cookieStore.set(DASHBOARD_ORDER_COOKIE, serializeDashboardOrder(items), {
+    maxAge: ONE_YEAR,
+    path: '/',
+  })
+}
+
+export async function updateConferenceLayout(keys: ConferenceSectionKey[]) {
+  const cookieStore = await cookies()
+  cookieStore.set(CONFERENCE_LAYOUT_COOKIE, serializeConferenceLayout(keys), {
     maxAge: ONE_YEAR,
     path: '/',
   })

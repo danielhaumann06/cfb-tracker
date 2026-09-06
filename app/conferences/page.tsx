@@ -1,6 +1,20 @@
 import Link from 'next/link'
 import { FBS_CONFERENCES } from '@/lib/conferences'
 
+function ChevronIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0">
+      <path
+        d="M9 5l7 7-7 7"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 export default function ConferencesPage() {
   const conferences = [...FBS_CONFERENCES].sort((a, b) =>
     a.name.localeCompare(b.name)
@@ -23,11 +37,12 @@ export default function ConferencesPage() {
             >
               <Link
                 href={`/conferences/${conf.groupId}`}
-                className="flex items-center justify-between px-4 py-3 text-sm font-medium hover:bg-[var(--background)]"
+                className="flex items-center justify-between gap-2 px-4 py-3 text-sm font-medium hover:bg-[var(--background)] active:bg-[var(--background)]"
               >
                 {conf.name}
-                <span className="text-[var(--text-muted)]">
+                <span className="flex items-center gap-1.5 text-[var(--text-muted)]">
                   {conf.shortName}
+                  <ChevronIcon />
                 </span>
               </Link>
             </li>

@@ -17,24 +17,6 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { updateDashboardOrder } from '@/app/actions'
-import {
-  dashboardItemKey,
-  type DashboardItem,
-  type DashboardSectionKey,
-} from '@/lib/dashboardOrder'
-
-const SECTION_LABELS: Record<DashboardSectionKey, string> = {
-  liveTicker: 'Live Ticker',
-  playoffOdds: 'Playoff Odds Tracker',
-  rankings: 'National Rankings',
-}
-
-function itemLabel(item: DashboardItem, teamNames: Map<string, string>) {
-  return item.type === 'team'
-    ? (teamNames.get(item.id) ?? 'Team')
-    : SECTION_LABELS[item.key]
-}
 
 function SortableRow({ id, label }: { id: string; label: string }) {
   const {
@@ -68,12 +50,18 @@ function SortableRow({ id, label }: { id: string; label: string }) {
   )
 }
 
-export function ReorderPanel({
+export function ReorderPanel<T>({
   initialOrder,
-  teamNames,
+  getKey,
+  getLabel,
+  onSave,
+  helpText = 'Drag to reorder.',
 }: {
-  initialOrder: DashboardItem[]
-  teamNames: Map<string, string>
+  initialOrder: T[]
+  getKey: (item: T) => string
+  getLabel: (item: T) => string
+  onSave: (items: T[]) => Promise<void>
+  helpText?: string
 }) {
   const [order, setOrder] = useState(initialOrder)
   const [isSaving, startSaving] = useTransition()
@@ -90,8 +78,8 @@ export function ReorderPanel({
     const { active, over } = event
     if (!over || active.id === over.id) return
     setOrder((prev) => {
-      const oldIndex = prev.findIndex((i) => dashboardItemKey(i) === active.id)
-      const newIndex = prev.findIndex((i) => dashboardItemKey(i) === over.id)
+      const oldIndex = prev.findIndex((i) => getKey(i) === active.id)
+      const newIndex = prev.findIndex((i) => getKey(i) === over.id)
       return arrayMove(prev, oldIndex, newIndex)
     })
     setSaved(false)
@@ -100,31 +88,29 @@ export function ReorderPanel({
   function save() {
     setSaved(false)
     startSaving(async () => {
-      await updateDashboardOrder(order)
+      await onSave(order)
       setSaved(true)
     })
   }
 
   return (
     <>
-      <p className="mt-3 text-sm text-[var(--text-muted)]">
-        Drag to reorder team cards and dashboard sections.
-      </p>
+      <p className="mt-3 text-sm text-[var(--text-muted)]">{helpText}</p>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
         <SortableContext
-          items={order.map(dashboardItemKey)}
+          items={order.map(getKey)}
           strategy={verticalListSortingStrategy}
         >
           <ul className="mt-3 space-y-1.5">
             {order.map((item) => (
               <SortableRow
-                key={dashboardItemKey(item)}
-                id={dashboardItemKey(item)}
-                label={itemLabel(item, teamNames)}
+                key={getKey(item)}
+                id={getKey(item)}
+                label={getLabel(item)}
               />
             ))}
           </ul>

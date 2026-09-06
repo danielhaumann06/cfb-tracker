@@ -2,10 +2,14 @@
 
 import Image from 'next/image'
 import { useMemo, useState, useTransition } from 'react'
-import { updateTrackedTeams, setThemeTeam } from '@/app/actions'
+import { updateTrackedTeams, setThemeTeam, updateDashboardOrder } from '@/app/actions'
 import { ReorderPanel } from '@/components/ReorderPanel'
 import type { TrackedTeam } from '@/lib/teams'
-import type { DashboardItem } from '@/lib/dashboardOrder'
+import {
+  dashboardItemKey,
+  type DashboardItem,
+  type DashboardSectionKey,
+} from '@/lib/dashboardOrder'
 
 interface TeamOption {
   id: string
@@ -13,6 +17,12 @@ interface TeamOption {
   name: string
   abbreviation?: string
   logo: string
+}
+
+const DASHBOARD_SECTION_LABELS: Record<DashboardSectionKey, string> = {
+  liveTicker: 'Live Ticker',
+  playoffOdds: 'Playoff Odds Tracker',
+  rankings: 'National Rankings',
 }
 
 type View = 'closed' | 'menu' | 'teams' | 'theme' | 'reorder'
@@ -367,7 +377,17 @@ export function SettingsMenu({
                 onBack={() => setView('menu')}
                 onClose={() => setView('closed')}
               />
-              <ReorderPanel initialOrder={dashboardOrder} teamNames={teamNames} />
+              <ReorderPanel
+                initialOrder={dashboardOrder}
+                getKey={dashboardItemKey}
+                getLabel={(item) =>
+                  item.type === 'team'
+                    ? (teamNames.get(item.id) ?? 'Team')
+                    : DASHBOARD_SECTION_LABELS[item.key]
+                }
+                onSave={updateDashboardOrder}
+                helpText="Drag to reorder team cards and dashboard sections."
+              />
             </>
           )}
         </section>
