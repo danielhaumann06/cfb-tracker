@@ -818,6 +818,23 @@ export async function getTeamNews(
     .slice(0, 2)
 }
 
+export async function getTopHeadlines(limit = 20): Promise<Headline[]> {
+  const res = await fetch(`${SITE_BASE}/news?limit=${limit}`, {
+    next: { revalidate: 300 },
+  })
+  if (!res.ok) return []
+  const data = await res.json()
+  const articles = data.articles ?? []
+
+  return articles
+    .map((a: any) => ({
+      headline: a.headline as string,
+      url: (a.links?.web?.href ?? '') as string,
+      published: a.published as string,
+    }))
+    .filter((h: Headline) => h.headline && h.url)
+}
+
 export interface TeamBoxscore {
   teamId: string
   teamName: string

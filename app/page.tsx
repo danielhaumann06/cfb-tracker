@@ -5,6 +5,7 @@ import { TeamCard } from '@/components/TeamCard'
 import { PlayoffOddsTracker } from '@/components/PlayoffOddsTracker'
 import { SettingsMenu } from '@/components/SettingsMenu'
 import { LiveTicker } from '@/components/LiveTicker'
+import { NewsTicker } from '@/components/NewsTicker'
 import {
   TRACKED_TEAMS_COOKIE,
   THEME_TEAM_COOKIE,
@@ -23,6 +24,7 @@ import {
   getFpiSummary,
   getNationalRankings,
   getLivePowerFiveGames,
+  getTopHeadlines,
   nextGame,
 } from '@/lib/espn'
 
@@ -60,10 +62,12 @@ export default async function Home() {
   const themeTeamLogo =
     teams.find(({ team }) => team.id === themeTeamId)?.team.logo ??
     (await getTeamSummary(themeTeamId).catch(() => null))?.logo
-  const [{ teams: nationalRankings }, liveGames] = await Promise.all([
-    getNationalRankings(),
-    getLivePowerFiveGames(),
-  ])
+  const [{ teams: nationalRankings }, liveGames, headlines] =
+    await Promise.all([
+      getNationalRankings(),
+      getLivePowerFiveGames(),
+      getTopHeadlines(),
+    ])
   const rankById = new Map(nationalRankings.map((t) => [t.id, t.rank]))
   const dashboardOrder = parseDashboardOrderCookie(
     cookieStore.get(DASHBOARD_ORDER_COOKIE)?.value,
@@ -128,6 +132,12 @@ export default async function Home() {
           </div>
         )
       }
+    } else if (item.key === 'newsTicker') {
+      dashboardSections.push(
+        <div key="newsTicker" className="mt-6">
+          <NewsTicker headlines={headlines} />
+        </div>
+      )
     }
   }
   flushTeamCards()

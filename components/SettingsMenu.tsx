@@ -22,6 +22,7 @@ interface TeamOption {
 const DASHBOARD_SECTION_LABELS: Record<DashboardSectionKey, string> = {
   liveTicker: 'Live Ticker',
   playoffOdds: 'Playoff Odds Tracker',
+  newsTicker: 'News Ticker',
 }
 
 type View = 'closed' | 'menu' | 'teams' | 'theme' | 'reorder'
