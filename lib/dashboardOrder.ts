@@ -17,13 +17,13 @@ export function dashboardItemKey(item: DashboardItem): string {
 }
 
 // No saved cookie (first visit ever) reproduces today's fixed layout:
-// Live Ticker, then team cards, then Playoff Odds, then the News Ticker.
+// Live Ticker, News Ticker, then team cards, then Playoff Odds.
 function defaultOrder(trackedTeamIds: string[]): DashboardItem[] {
   return [
     { type: 'section', key: 'liveTicker' },
+    { type: 'section', key: 'newsTicker' },
     ...trackedTeamIds.map((id): DashboardItem => ({ type: 'team', id })),
     { type: 'section', key: 'playoffOdds' },
-    { type: 'section', key: 'newsTicker' },
   ]
 }
 
