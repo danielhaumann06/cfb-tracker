@@ -827,12 +827,54 @@ export async function getTopHeadlines(limit = 20): Promise<Headline[]> {
   const articles = data.articles ?? []
 
   return articles
+    // "Media" articles are video highlight clips ("X vs Y: Full
+    // Highlights"), not written headlines - keep this a text news ticker.
+    .filter((a: any) => a.type !== 'Media')
     .map((a: any) => ({
       headline: a.headline as string,
       url: (a.links?.web?.href ?? '') as string,
       published: a.published as string,
     }))
     .filter((h: Headline) => h.headline && h.url)
+}
+
+export async function getConferenceNews(groupId: string): Promise<Headline[]> {
+  const { teams } = await getConferenceStandings(groupId)
+  if (teams.length === 0) return []
+
+  // ESPN's news endpoint ignores a `groups` (conference) filter entirely
+  // (confirmed: an invalid group id returns the same general feed as a
+  // valid one), so build conference-relevant news by fetching each
+  // team's own filtered feed - which does work - and merging them.
+  const results = await Promise.all(
+    teams.map((t) =>
+      fetch(`${SITE_BASE}/news?team=${t.id}&limit=5`, {
+        next: { revalidate: 900 },
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .catch(() => null)
+    )
+  )
+
+  const seen = new Set<string>()
+  const articles: (Headline & { published: string })[] = []
+
+  for (const data of results) {
+    for (const a of data?.articles ?? []) {
+      if (a.type === 'Media') continue
+      const url = a.links?.web?.href
+      const headline = a.headline
+      if (!url || !headline || seen.has(url)) continue
+      seen.add(url)
+      articles.push({ headline, url, published: a.published ?? '' })
+    }
+  }
+
+  return articles
+    .sort(
+      (a, b) => new Date(b.published).getTime() - new Date(a.published).getTime()
+    )
+    .slice(0, 20)
 }
 
 export interface TeamBoxscore {

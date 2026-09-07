@@ -6,6 +6,7 @@ import { ConferenceOddsTracker } from '@/components/ConferenceOddsTracker'
 import { ConferenceLayoutMenu } from '@/components/ConferenceLayoutMenu'
 import { WinLossRaceChart } from '@/components/WinLossRaceChart'
 import { RankingList } from '@/components/RankingList'
+import { NewsTicker } from '@/components/NewsTicker'
 import { FBS_CONFERENCES } from '@/lib/conferences'
 import {
   CONFERENCE_LAYOUT_COOKIE,
@@ -15,12 +16,14 @@ import {
   getConferenceScoreboard,
   getConferenceStandings,
   getConferenceWinLossTimeline,
+  getConferenceNews,
   getAllTeams,
   getFpiSummary,
   type RankedTeam,
   type ConferenceGame,
   type TeamListEntry,
   type ConferenceTimeline,
+  type Headline,
 } from '@/lib/espn'
 
 export default async function ConferenceBreakdownPage({
@@ -41,13 +44,15 @@ export default async function ConferenceBreakdownPage({
   let games: ConferenceGame[]
   let allTeams: TeamListEntry[]
   let timeline: ConferenceTimeline
+  let news: Headline[]
   try {
-    ;[{ conferenceName, teams }, games, allTeams, timeline] =
+    ;[{ conferenceName, teams }, games, allTeams, timeline, news] =
       await Promise.all([
         getConferenceStandings(groupId),
         getConferenceScoreboard(groupId),
         getAllTeams(),
         getConferenceWinLossTimeline(groupId),
+        getConferenceNews(groupId),
       ])
   } catch {
     notFound()
@@ -70,6 +75,11 @@ export default async function ConferenceBreakdownPage({
     ticker: (
       <div className="mt-6">
         <ConferenceTicker groupId={groupId} initialGames={games} />
+      </div>
+    ),
+    news: (
+      <div className="mt-6">
+        <NewsTicker headlines={news} />
       </div>
     ),
     standings: (
