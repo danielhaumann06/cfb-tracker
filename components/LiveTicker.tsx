@@ -41,8 +41,8 @@ export function LiveTicker({
   const [games, setGames] = useState(initialGames)
 
   useEffect(() => {
-    if (games.length === 0) return
-
+    // Keep polling even when there are currently no live games - a new
+    // game going live shouldn't require a full page reload to show up.
     const interval = setInterval(async () => {
       try {
         const res = await fetch('/api/live-ticker')
@@ -53,7 +53,7 @@ export function LiveTicker({
     }, 30_000)
 
     return () => clearInterval(interval)
-  }, [games.length])
+  }, [])
 
   if (games.length === 0) return null
 

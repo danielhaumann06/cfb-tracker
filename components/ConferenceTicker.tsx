@@ -47,9 +47,8 @@ export function ConferenceTicker({
   const [games, setGames] = useState(initialGames)
 
   useEffect(() => {
-    const hasLive = games.some((g) => g.state === 'in')
-    if (!hasLive) return
-
+    // Keep polling even when nothing is currently live - a game going
+    // live shouldn't require a full page reload to show up.
     const interval = setInterval(async () => {
       try {
         const res = await fetch(`/api/conference-scoreboard/${groupId}`)
@@ -60,7 +59,7 @@ export function ConferenceTicker({
     }, 30_000)
 
     return () => clearInterval(interval)
-  }, [games, groupId])
+  }, [groupId])
 
   if (games.length === 0) return null
 
