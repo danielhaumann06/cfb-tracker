@@ -157,24 +157,24 @@ export default async function Home() {
               className="h-14 w-14 shrink-0 sm:h-20 sm:w-20"
             />
           )}
-          <h1 className="min-w-0">
+          <h1 className="min-w-0 rounded-lg border border-[var(--seq-fill)] px-2 py-1 sm:px-3 sm:py-1.5">
             <Image
               src="/api/wordmark/light"
               alt="Saturday Slate"
-              width={1560}
+              width={1200}
               height={220}
               unoptimized
               priority
-              className="h-8 w-auto dark:hidden sm:h-14"
+              className="h-9 w-auto dark:hidden sm:h-14"
             />
             <Image
               src="/api/wordmark/dark"
               alt="Saturday Slate"
-              width={1560}
+              width={1200}
               height={220}
               unoptimized
               priority
-              className="hidden h-8 w-auto dark:block sm:h-14"
+              className="hidden h-9 w-auto dark:block sm:h-14"
             />
           </h1>
         </div>

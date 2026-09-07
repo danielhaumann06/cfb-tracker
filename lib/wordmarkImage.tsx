@@ -16,10 +16,11 @@ export function buildWordmark(color: string) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '0 60px',
+          padding: '0 40px',
           fontFamily: 'Bebas Neue',
-          fontSize: 140,
+          fontSize: 160,
           letterSpacing: 6,
+          whiteSpace: 'nowrap',
           color,
         }}
       >
@@ -27,7 +28,7 @@ export function buildWordmark(color: string) {
       </div>
     ),
     {
-      width: 1560,
+      width: 1200,
       height: 220,
       fonts: [
         { name: 'Bebas Neue', data: bebasNeue, style: 'normal', weight: 400 },
