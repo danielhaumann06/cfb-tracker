@@ -23,7 +23,7 @@ export function buildWordmark(color: string) {
           color,
         }}
       >
-        COLLEGE FOOTBALL TRACKER
+        SATURDAY SLATE
       </div>
     ),
     {

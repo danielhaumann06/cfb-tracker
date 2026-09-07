@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'College Football Tracker',
-    short_name: 'CFB Tracker',
+    name: 'Saturday Slate',
+    short_name: 'Saturday Slate',
     description:
       'Records, schedules, spreads, FPI, and playoff odds for your tracked college football teams.',
     start_url: '/',

@@ -160,7 +160,7 @@ export default async function Home() {
           <h1 className="min-w-0">
             <Image
               src="/api/wordmark/light"
-              alt="College Football Tracker"
+              alt="Saturday Slate"
               width={1560}
               height={220}
               unoptimized
@@ -169,7 +169,7 @@ export default async function Home() {
             />
             <Image
               src="/api/wordmark/dark"
-              alt="College Football Tracker"
+              alt="Saturday Slate"
               width={1560}
               height={220}
               unoptimized

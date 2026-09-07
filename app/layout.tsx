@@ -32,11 +32,11 @@ async function getThemeColor(): Promise<string> {
 }
 
 export const metadata: Metadata = {
-  title: "CFB Tracker",
+  title: "Saturday Slate",
   description:
     "Records, schedules, spreads, FPI, and playoff odds for your tracked college football teams.",
   appleWebApp: {
-    title: "CFB Tracker",
+    title: "Saturday Slate",
     statusBarStyle: "black-translucent",
   },
 };
