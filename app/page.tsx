@@ -25,6 +25,7 @@ import {
   getFpiSummary,
   getNationalRankings,
   getLivePowerFiveGames,
+  getTop25Scores,
   getTopHeadlines,
   nextGame,
 } from '@/lib/espn'
@@ -69,6 +70,9 @@ export default async function Home() {
       getLivePowerFiveGames(),
       getTopHeadlines(),
     ])
+  const tickerMode = liveGames.length > 0 ? 'live' : 'top25'
+  const tickerGames =
+    liveGames.length > 0 ? liveGames : await getTop25Scores()
   const rankById = new Map(nationalRankings.map((t) => [t.id, t.rank]))
   const dashboardOrder = parseDashboardOrderCookie(
     cookieStore.get(DASHBOARD_ORDER_COOKIE)?.value,
@@ -115,7 +119,7 @@ export default async function Home() {
     if (item.key === 'liveTicker') {
       dashboardSections.push(
         <div key="liveTicker" className="mt-6">
-          <LiveTicker initialGames={liveGames} />
+          <LiveTicker initialMode={tickerMode} initialGames={tickerGames} />
         </div>
       )
     } else if (item.key === 'playoffOdds') {

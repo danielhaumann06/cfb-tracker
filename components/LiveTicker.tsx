@@ -4,6 +4,8 @@ import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import type { LiveTickerGame } from '@/lib/espn'
 
+type TickerMode = 'live' | 'top25'
+
 function TickerTeamScore({
   team,
 }: {
@@ -34,19 +36,27 @@ function TickerItem({ game }: { game: LiveTickerGame }) {
 }
 
 export function LiveTicker({
+  initialMode,
   initialGames,
 }: {
+  initialMode: TickerMode
   initialGames: LiveTickerGame[]
 }) {
+  const [mode, setMode] = useState<TickerMode>(initialMode)
   const [games, setGames] = useState(initialGames)
 
   useEffect(() => {
-    // Keep polling even when there are currently no live games - a new
-    // game going live shouldn't require a full page reload to show up.
+    // Keep polling regardless of mode - a new game going live should
+    // switch back from the Top 25 recap without a full page reload, and
+    // the last live game ending should switch the other way.
     const interval = setInterval(async () => {
       try {
         const res = await fetch('/api/live-ticker')
-        if (res.ok) setGames(await res.json())
+        if (res.ok) {
+          const data = await res.json()
+          setMode(data.mode)
+          setGames(data.games)
+        }
       } catch {
         // stale scores are fine until the next tick
       }
@@ -57,13 +67,16 @@ export function LiveTicker({
 
   if (games.length === 0) return null
 
+  const isLive = mode === 'live'
   const durationSeconds = Math.max(games.length * 4, 12)
 
   return (
     <div className="overflow-hidden rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] shadow-[var(--shadow-card)]">
       <div className="flex items-center gap-1.5 border-b border-[var(--gridline)] px-4 py-1.5 text-xs font-semibold text-[var(--text-muted)]">
-        <span className="h-1.5 w-1.5 rounded-full bg-[var(--seq-fill)]" />
-        LIVE
+        {isLive && (
+          <span className="h-1.5 w-1.5 rounded-full bg-[var(--seq-fill)]" />
+        )}
+        {isLive ? 'LIVE' : 'TOP 25 SCORES'}
       </div>
       <div className="overflow-hidden py-3">
         <div

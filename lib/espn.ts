@@ -189,6 +189,49 @@ export async function getLivePowerFiveGames(): Promise<LiveTickerGame[]> {
   return games
 }
 
+// Used to fill the dashboard's Live Ticker when nothing is currently live -
+// each currently-ranked team's most recently completed game, so it reads
+// as a scoreboard recap rather than going blank between game windows.
+export async function getTop25Scores(): Promise<LiveTickerGame[]> {
+  const { teams } = await getNationalRankings()
+  if (teams.length === 0) return []
+
+  const schedules = await Promise.all(
+    teams.map((t) => getTeamSchedule(t.id).catch(() => [] as GameSummary[]))
+  )
+
+  const seen = new Set<string>()
+  const games: LiveTickerGame[] = []
+
+  for (const schedule of schedules) {
+    const completed = schedule
+      .filter((g) => g.state === 'post')
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    const game = completed[0]
+    if (!game || seen.has(game.id)) continue
+    seen.add(game.id)
+
+    games.push({
+      id: game.id,
+      statusDetail: game.statusDetail,
+      home: {
+        name: game.home.abbreviation,
+        abbreviation: game.home.abbreviation,
+        logo: game.home.logo,
+        score: game.home.score,
+      },
+      away: {
+        name: game.away.abbreviation,
+        abbreviation: game.away.abbreviation,
+        logo: game.away.logo,
+        score: game.away.score,
+      },
+    })
+  }
+
+  return games
+}
+
 export interface ConferenceGame {
   id: string
   state: GameState
