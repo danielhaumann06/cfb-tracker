@@ -3,10 +3,14 @@
 import { useState } from 'react'
 import type { PollTimeline } from '@/lib/espn'
 
-const WIDTH = 680
+// Fixed spacing per week (rather than auto-fitting every week into one
+// constant-width canvas) so early season, with only a couple of weeks of
+// data, still shows a few weeks at once without needing to scroll - the
+// canvas only grows wide enough to need scrolling once there are many
+// weeks to show.
+const PX_PER_WEEK = 110
 const HEIGHT = 460
 const MARGIN = { top: 12, right: 88, bottom: 28, left: 24 }
-const INNER_WIDTH = WIDTH - MARGIN.left - MARGIN.right
 const INNER_HEIGHT = HEIGHT - MARGIN.top - MARGIN.bottom
 const MIN_LABEL_GAP = 15
 const MAX_RANK = 25
@@ -43,10 +47,16 @@ export function PollRaceChart({ timeline }: { timeline: PollTimeline }) {
     )
   }
 
+  const innerWidth = Math.max(
+    (weekLabels.length - 1) * PX_PER_WEEK,
+    PX_PER_WEEK
+  )
+  const width = MARGIN.left + MARGIN.right + innerWidth
+
   const xForWeekIndex = (i: number) =>
     weekLabels.length > 1
-      ? MARGIN.left + (i / (weekLabels.length - 1)) * INNER_WIDTH
-      : MARGIN.left + INNER_WIDTH / 2
+      ? MARGIN.left + (i / (weekLabels.length - 1)) * innerWidth
+      : MARGIN.left + innerWidth / 2
 
   const yForRank = (rank: number) =>
     MARGIN.top + ((rank - 1) / (MAX_RANK - 1)) * INNER_HEIGHT
@@ -81,8 +91,8 @@ export function PollRaceChart({ timeline }: { timeline: PollTimeline }) {
   return (
     <div className="overflow-x-auto">
       <svg
-        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-        width={WIDTH}
+        viewBox={`0 0 ${width} ${HEIGHT}`}
+        width={width}
         height={HEIGHT}
         className="max-w-none"
         role="img"
@@ -92,7 +102,7 @@ export function PollRaceChart({ timeline }: { timeline: PollTimeline }) {
           <g key={rank}>
             <line
               x1={MARGIN.left}
-              x2={MARGIN.left + INNER_WIDTH}
+              x2={MARGIN.left + innerWidth}
               y1={yForRank(rank)}
               y2={yForRank(rank)}
               stroke="var(--gridline)"
