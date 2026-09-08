@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
+import Image from 'next/image'
 import type { ReactNode } from 'react'
 import { ConferenceTicker } from '@/components/ConferenceTicker'
 import { ConferenceOddsTracker } from '@/components/ConferenceOddsTracker'
@@ -32,7 +33,8 @@ export default async function ConferenceBreakdownPage({
   params: Promise<{ groupId: string }>
 }) {
   const { groupId } = await params
-  if (!FBS_CONFERENCES.some((c) => c.groupId === groupId)) notFound()
+  const conference = FBS_CONFERENCES.find((c) => c.groupId === groupId)
+  if (!conference) notFound()
 
   const cookieStore = await cookies()
   const sectionOrder = parseConferenceLayoutCookie(
@@ -114,7 +116,17 @@ export default async function ConferenceBreakdownPage({
   return (
     <main className="mx-auto w-full min-w-0 max-w-4xl px-4 py-8 sm:px-6">
       <div className="flex items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold">{conferenceName}</h1>
+        <h1 className="flex min-w-0 items-center gap-2.5 text-2xl font-semibold">
+          <Image
+            src={conference.logo}
+            alt=""
+            width={40}
+            height={40}
+            unoptimized
+            className="shrink-0"
+          />
+          <span className="truncate">{conferenceName}</span>
+        </h1>
         <ConferenceLayoutMenu initialOrder={sectionOrder} />
       </div>
 

@@ -18,7 +18,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           : { paddingBottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }
       }
     >
-      <TopTabs />
+      {!isHome && <TopTabs />}
       {children}
       {!isHome && <PageNav />}
     </div>

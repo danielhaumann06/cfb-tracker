@@ -398,7 +398,7 @@ export async function getFpiSummary(espnId: string): Promise<FpiSummary | null> 
 
 async function getApPoll(): Promise<any> {
   const res = await fetch(`${SITE_BASE}/rankings`, {
-    next: { revalidate: 3600 },
+    next: { revalidate: 60 },
   })
   if (!res.ok) return null
   const data = await res.json()

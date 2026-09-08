@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { FBS_CONFERENCES } from '@/lib/conferences'
 
 function ChevronIcon() {
@@ -39,8 +40,18 @@ export default function ConferencesPage() {
                 href={`/conferences/${conf.groupId}`}
                 className="flex items-center justify-between gap-2 px-4 py-3 text-sm font-medium hover:bg-[var(--background)] active:bg-[var(--background)]"
               >
-                {conf.name}
-                <span className="flex items-center gap-1.5 text-[var(--text-muted)]">
+                <span className="flex min-w-0 items-center gap-2.5">
+                  <Image
+                    src={conf.logo}
+                    alt=""
+                    width={28}
+                    height={28}
+                    unoptimized
+                    className="shrink-0"
+                  />
+                  <span className="truncate">{conf.name}</span>
+                </span>
+                <span className="flex shrink-0 items-center gap-1.5 text-[var(--text-muted)]">
                   {conf.shortName}
                   <ChevronIcon />
                 </span>
