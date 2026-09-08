@@ -220,7 +220,7 @@ export function SettingsMenu({
                 onClose={() => setView('closed')}
               />
               <h3 className="mt-3 text-sm font-semibold text-[var(--text-muted)]">
-                Tracked Teams
+                My Teams
               </h3>
               {pending.length === 0 ? (
                 <p className="mt-2 text-sm text-[var(--text-muted)]">

@@ -86,11 +86,9 @@ export default async function Home() {
   function flushTeamCards() {
     if (pendingTeamCards.length === 0) return
     dashboardSections.push(
-      <div
-        key={`team-grid-${dashboardSections.length}`}
-        className="mt-6 grid gap-4 sm:grid-cols-2"
-      >
-        {pendingTeamCards}
+      <div key={`team-grid-${dashboardSections.length}`} className="mt-6">
+        <h2 className="mb-3 font-semibold">My Teams</h2>
+        <div className="grid gap-4 sm:grid-cols-2">{pendingTeamCards}</div>
       </div>
     )
     pendingTeamCards = []
