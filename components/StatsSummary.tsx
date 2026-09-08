@@ -74,12 +74,8 @@ export function StatsSummary({
         value={fpi?.fpiRank != null ? `#${fpi.fpiRank}` : '—'}
       />
       <StatTile
-        label="Projected record"
-        value={
-          fpi?.projectedWins != null && fpi?.projectedLosses != null
-            ? `${fpi.projectedWins.toFixed(1)}-${fpi.projectedLosses.toFixed(1)}`
-            : '—'
-        }
+        label="Projected wins"
+        value={fpi?.projectedWins != null ? fpi.projectedWins.toFixed(1) : '—'}
       />
       <StatTile
         label="SOS rank (remaining)"
