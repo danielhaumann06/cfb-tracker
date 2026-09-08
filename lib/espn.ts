@@ -467,7 +467,7 @@ async function fetchPollWeek(
 ): Promise<RawPollWeek | null> {
   const res = await fetch(
     `${RANKINGS_CORE_BASE}/${season}/types/${seasonType}/weeks/${week}/rankings/${pollId}?lang=en&region=us`,
-    { next: { revalidate: 3600 } }
+    { next: { revalidate: 60 } }
   )
   if (!res.ok) return null
   const data = await res.json()
@@ -558,11 +558,14 @@ export async function getPollTimeline(pollId: string): Promise<PollTimeline> {
     ),
   ])
 
+  // ESPN doesn't index a "week 1" regular-season poll at all - the first
+  // real release of the season lands on "week 2" - so a genuine permanent
+  // gap can appear before real data resumes. Keep every week that has
+  // data rather than stopping at the first miss, in chronological order.
   const weeks: RawPollWeek[] = []
   if (preseason) weeks.push(preseason)
   for (const week of regularSeasonWeeks) {
-    if (!week) break
-    weeks.push(week)
+    if (week) weeks.push(week)
   }
 
   const latest = weeks.at(-1)
