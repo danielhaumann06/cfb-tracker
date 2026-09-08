@@ -1,6 +1,11 @@
 import Link from 'next/link'
 import type { GameOdds, GameSummary } from '@/lib/espn'
 
+// Michigan vs. Western Michigan, Week 1 2026 - the MAC has formally
+// appealed this result to the NCAA/CFP, seeking to have Western Michigan
+// recognized as the winner instead. Flag it wherever the score appears.
+const DISPUTED_GAME_ID = '401858428'
+
 function formatDate(dateIso: string): string {
   return new Date(dateIso).toLocaleDateString('en-US', {
     month: 'short',
@@ -62,6 +67,7 @@ export function ScheduleTable({
                       {game.completed ? (
                         <span className={won ? 'text-[var(--seq-fill)]' : ''}>
                           {won ? 'W' : 'L'} {self.score}-{opponent.score}
+                          {game.id === DISPUTED_GAME_ID && '*'}
                         </span>
                       ) : (
                         <span>{game.statusDetail}</span>
@@ -87,6 +93,12 @@ export function ScheduleTable({
           })}
         </tbody>
       </table>
+      {games.some((g) => g.id === DISPUTED_GAME_ID) && (
+        <p className="border-t border-[var(--gridline)] px-4 py-2 text-xs text-[var(--text-muted)]">
+          * The MAC has formally appealed this result to the NCAA/CFP,
+          seeking to have Western Michigan recognized as the winner.
+        </p>
+      )}
     </div>
   )
 }

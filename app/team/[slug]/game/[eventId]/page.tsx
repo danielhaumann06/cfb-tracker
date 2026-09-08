@@ -13,6 +13,11 @@ import {
   getGameHighlights,
 } from '@/lib/espn'
 
+// Michigan vs. Western Michigan, Week 1 2026 - the MAC has formally
+// appealed this result to the NCAA/CFP, seeking to have Western Michigan
+// recognized as the winner instead.
+const DISPUTED_GAME_ID = '401858428'
+
 export default async function GamePage({
   params,
 }: {
@@ -91,6 +96,11 @@ export default async function GamePage({
               home={status.home}
               statusDetail={status.statusDetail}
               live={false}
+              disputedNote={
+                eventId === DISPUTED_GAME_ID
+                  ? 'The MAC has formally appealed this result to the NCAA/CFP, seeking to have Western Michigan recognized as the winner.'
+                  : undefined
+              }
             />
 
             {boxscore ? (
