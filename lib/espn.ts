@@ -126,6 +126,7 @@ export interface TickerTeam {
   abbreviation: string
   logo: string
   score: string | null
+  rank: number | null
 }
 
 export interface LiveTickerGame {
@@ -136,6 +137,9 @@ export interface LiveTickerGame {
 }
 
 function mapTickerTeam(competitor: any): TickerTeam {
+  // ESPN's scoreboard embeds each competitor's current AP rank directly -
+  // 99 is their sentinel for "unranked", not a real rank.
+  const curatedRank = competitor.curatedRank?.current
   return {
     name:
       competitor.team.shortDisplayName ??
@@ -144,6 +148,7 @@ function mapTickerTeam(competitor: any): TickerTeam {
     abbreviation: competitor.team.abbreviation,
     logo: competitor.team.logo ?? '',
     score: competitor.score ?? null,
+    rank: curatedRank != null && curatedRank < 99 ? curatedRank : null,
   }
 }
 
@@ -196,6 +201,7 @@ export async function getTop25Scores(): Promise<LiveTickerGame[]> {
   const { teams } = await getNationalRankings()
   if (teams.length === 0) return []
 
+  const rankById = new Map(teams.map((t) => [t.id, t.rank]))
   const schedules = await Promise.all(
     teams.map((t) => getTeamSchedule(t.id).catch(() => [] as GameSummary[]))
   )
@@ -219,12 +225,14 @@ export async function getTop25Scores(): Promise<LiveTickerGame[]> {
         abbreviation: game.home.abbreviation,
         logo: game.home.logo,
         score: game.home.score,
+        rank: rankById.get(game.home.id) ?? null,
       },
       away: {
         name: game.away.abbreviation,
         abbreviation: game.away.abbreviation,
         logo: game.away.logo,
         score: game.away.score,
+        rank: rankById.get(game.away.id) ?? null,
       },
     })
   }

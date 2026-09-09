@@ -16,7 +16,12 @@ function TickerTeamScore({
       {team.logo && (
         <Image src={team.logo} alt="" width={16} height={16} unoptimized />
       )}
-      <span className="font-semibold">{team.abbreviation}</span>
+      <span className="font-semibold">
+        {team.rank != null && (
+          <span className="text-[var(--text-muted)]">#{team.rank} </span>
+        )}
+        {team.abbreviation}
+      </span>
       <span>{team.score ?? 0}</span>
     </span>
   )
