@@ -7,6 +7,9 @@ function TeamScore({ team }: { team: GameTeam }) {
       {team.logo && (
         <Image src={team.logo} alt="" width={20} height={20} unoptimized />
       )}
+      {team.rank != null && (
+        <span className="text-[var(--text-muted)]">#{team.rank}</span>
+      )}{' '}
       {team.nickname} {team.score}
     </span>
   )

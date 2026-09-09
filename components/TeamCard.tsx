@@ -66,7 +66,9 @@ export function TeamCard({
                 {next.state === 'in' ? 'Live' : 'Next'}
               </dt>
               <dd className="text-right">
-                {isHome ? 'vs' : 'at'} {opponent?.name ?? 'TBD'}
+                {isHome ? 'vs' : 'at'}{' '}
+                {opponent?.rank != null && `#${opponent.rank} `}
+                {opponent?.name ?? 'TBD'}
               </dd>
             </div>
             <div className="flex justify-between gap-2">
@@ -87,8 +89,18 @@ export function TeamCard({
               <div className="flex justify-between gap-2">
                 <dt className="text-[var(--text-muted)]">Score</dt>
                 <dd className="text-right font-medium">
+                  {self.rank != null && (
+                    <span className="text-[var(--text-muted)]">
+                      #{self.rank}{' '}
+                    </span>
+                  )}
                   {self.abbreviation} {self.score ?? 0}
                   <span className="text-[var(--text-muted)]"> &ndash; </span>
+                  {opponent.rank != null && (
+                    <span className="text-[var(--text-muted)]">
+                      #{opponent.rank}{' '}
+                    </span>
+                  )}
                   {opponent.abbreviation} {opponent.score ?? 0}
                 </dd>
               </div>

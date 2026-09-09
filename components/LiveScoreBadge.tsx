@@ -41,8 +41,10 @@ export function LiveScoreBadge({
         LIVE
       </span>
       <span className="font-medium">
-        {status.away.name} {status.away.score} — {status.home.name}{' '}
-        {status.home.score}
+        {status.away.rank != null && `#${status.away.rank} `}
+        {status.away.name} {status.away.score} —{' '}
+        {status.home.rank != null && `#${status.home.rank} `}
+        {status.home.name} {status.home.score}
       </span>
       <span className="text-sm text-[var(--text-muted)]">
         {status.statusDetail}

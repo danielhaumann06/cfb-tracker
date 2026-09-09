@@ -56,7 +56,9 @@ export function ScheduleTable({
                 </td>
                 <td className="px-4 py-2">{formatDate(game.date)}</td>
                 <td className="px-4 py-2">
-                  {isHome ? 'vs' : 'at'} {opponent.name}
+                  {isHome ? 'vs' : 'at'}{' '}
+                  {opponent.rank != null && `#${opponent.rank} `}
+                  {opponent.name}
                 </td>
                 <td className="px-4 py-2">
                   {hasBoxscore ? (

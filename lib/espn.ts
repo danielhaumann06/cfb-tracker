@@ -38,6 +38,7 @@ export interface GameTeam {
   abbreviation: string
   logo: string
   score: string | null
+  rank: number | null
 }
 
 export interface GameSummary {
@@ -105,6 +106,16 @@ function mapCompetitor(competitor: any): GameTeam {
         ? (rawScore.displayValue ?? null)
         : String(rawScore)
 
+  // Different endpoints expose the current AP rank under different shapes:
+  // the schedule endpoint uses curatedRank.current (99 = unranked), the
+  // game summary endpoint uses a plain rank field that's simply absent
+  // when unranked.
+  const curatedRank = competitor.curatedRank?.current
+  const rank =
+    curatedRank != null && curatedRank < 99
+      ? curatedRank
+      : (competitor.rank ?? null)
+
   return {
     id: competitor.team.id,
     name: competitor.team.displayName,
@@ -115,6 +126,7 @@ function mapCompetitor(competitor: any): GameTeam {
     abbreviation: competitor.team.abbreviation,
     logo: pickDefaultLogo(competitor.team.logos),
     score,
+    rank,
   }
 }
 
@@ -285,6 +297,7 @@ export interface ScheduleTeam {
   logo: string
   slug: string
   score: string | null
+  rank: number | null
 }
 
 export interface ScheduleGame {
@@ -338,14 +351,18 @@ export async function getConferenceSchedule(
     (e: any) => ({ week: Number(e.value), label: e.label })
   )
 
-  const mapScheduleTeam = (competitor: any): ScheduleTeam => ({
-    id: competitor.team.id,
-    name: competitor.team.shortDisplayName ?? competitor.team.displayName,
-    abbreviation: competitor.team.abbreviation,
-    logo: competitor.team.logo ?? '',
-    slug: slugById.get(competitor.team.id) ?? '',
-    score: competitor.score ?? null,
-  })
+  const mapScheduleTeam = (competitor: any): ScheduleTeam => {
+    const curatedRank = competitor.curatedRank?.current
+    return {
+      id: competitor.team.id,
+      name: competitor.team.shortDisplayName ?? competitor.team.displayName,
+      abbreviation: competitor.team.abbreviation,
+      logo: competitor.team.logo ?? '',
+      slug: slugById.get(competitor.team.id) ?? '',
+      score: competitor.score ?? null,
+      rank: curatedRank != null && curatedRank < 99 ? curatedRank : null,
+    }
+  }
 
   const games: ScheduleGame[] = (data.events ?? []).map((event: any) => {
     const competition = event.competitions[0]

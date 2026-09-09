@@ -32,6 +32,11 @@ function TeamLink({ team }: { team: ScheduleTeam }) {
           className="shrink-0"
         />
       )}
+      {team.rank != null && (
+        <span className="shrink-0 text-[var(--text-muted)]">
+          #{team.rank}
+        </span>
+      )}
       <span className="truncate">{team.name}</span>
     </span>
   )
