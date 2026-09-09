@@ -51,25 +51,24 @@ function LeaderRow({
   )
 }
 
-export function StatLeadersCard({
+function LeaderGroup({
+  title,
   categories,
 }: {
+  title: string
   categories: StatLeaderCategory[]
 }) {
   if (categories.length === 0) return null
 
   return (
-    <section className="rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-5 shadow-[var(--shadow-card)]">
-      <h2 className="font-semibold">Stat Leaders</h2>
-      <p className="text-sm text-[var(--text-muted)]">
-        Power Five leaders this season
-      </p>
-      <div className="mt-4 space-y-5">
+    <div>
+      <h3 className="mb-3 text-sm font-semibold text-[var(--text-muted)]">
+        {title}
+      </h3>
+      <div className="space-y-4">
         {categories.map((category) => (
           <div key={category.name}>
-            <h3 className="mb-2 text-sm font-semibold text-[var(--text-muted)]">
-              {category.displayName}
-            </h3>
+            <h4 className="mb-2 text-sm font-medium">{category.displayName}</h4>
             <ul className="divide-y divide-[var(--gridline)] overflow-hidden rounded-lg border border-[var(--border-hairline)]">
               {category.leaders.map((leader, i) => (
                 <LeaderRow key={leader.playerId} leader={leader} rank={i + 1} />
@@ -77,6 +76,30 @@ export function StatLeadersCard({
             </ul>
           </div>
         ))}
+      </div>
+    </div>
+  )
+}
+
+export function StatLeadersCard({
+  categories,
+}: {
+  categories: StatLeaderCategory[]
+}) {
+  if (categories.length === 0) return null
+
+  const offense = categories.filter((c) => c.group === 'offense')
+  const defense = categories.filter((c) => c.group === 'defense')
+
+  return (
+    <section className="rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-5 shadow-[var(--shadow-card)]">
+      <h2 className="font-semibold">Stat Leaders</h2>
+      <p className="text-sm text-[var(--text-muted)]">
+        Power Five leaders this season
+      </p>
+      <div className="mt-4 space-y-6">
+        <LeaderGroup title="Offensive Leaders" categories={offense} />
+        <LeaderGroup title="Defensive Leaders" categories={defense} />
       </div>
     </section>
   )

@@ -1056,17 +1056,26 @@ export interface StatLeader {
   value: string
 }
 
+export type StatLeaderGroup = 'offense' | 'defense'
+
 export interface StatLeaderCategory {
   name: string
   displayName: string
+  group: StatLeaderGroup
   leaders: StatLeader[]
 }
 
-const STAT_LEADER_CATEGORIES: { key: string; label: string }[] = [
-  { key: 'passingYards', label: 'Passing' },
-  { key: 'rushingYards', label: 'Rushing' },
-  { key: 'receivingYards', label: 'Receiving' },
-  { key: 'sacks', label: 'Sacks' },
+const STAT_LEADER_CATEGORIES: {
+  key: string
+  label: string
+  group: StatLeaderGroup
+}[] = [
+  { key: 'passingYards', label: 'Passing', group: 'offense' },
+  { key: 'rushingYards', label: 'Rushing', group: 'offense' },
+  { key: 'receivingYards', label: 'Receiving', group: 'offense' },
+  { key: 'sacks', label: 'Sacks', group: 'defense' },
+  { key: 'totalTackles', label: 'Tackles', group: 'defense' },
+  { key: 'interceptions', label: 'Interceptions', group: 'defense' },
 ]
 
 function idFromRef(ref: string | undefined): string {
@@ -1109,7 +1118,7 @@ async function resolvePlayerBasics(
 export async function getPowerFiveStatLeaders(): Promise<StatLeaderCategory[]> {
   const season = currentSeasonYear()
   const [res, p5TeamIds, allTeams] = await Promise.all([
-    fetch(`${CORE_BASE}/seasons/${season}/types/2/leaders?limit=50`, {
+    fetch(`${CORE_BASE}/seasons/${season}/types/2/leaders?limit=200`, {
       next: { revalidate: 900 },
     }),
     getPowerFiveTeamIds(),
@@ -1158,6 +1167,7 @@ export async function getPowerFiveStatLeaders(): Promise<StatLeaderCategory[]> {
       categories.push({
         name: wanted.key,
         displayName: wanted.label,
+        group: wanted.group,
         leaders,
       })
     }
