@@ -1,5 +1,6 @@
 import { getPollTimeline, POLL_IDS } from '@/lib/espn'
 import { PollCard } from '@/components/PollCard'
+import { AutoRefresh } from '@/components/AutoRefresh'
 
 export default async function PollsPage() {
   const [ap, coaches, cfp] = await Promise.all([
@@ -10,6 +11,7 @@ export default async function PollsPage() {
 
   return (
     <main className="mx-auto w-full min-w-0 max-w-2xl px-4 py-8 sm:px-6">
+      <AutoRefresh />
       <h1 className="text-2xl font-semibold">Polls</h1>
       <p className="mt-1 text-[var(--text-secondary)]">
         AP, Coaches, and CFP rankings, with each team&rsquo;s rank by week.

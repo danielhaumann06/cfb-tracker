@@ -1,4 +1,5 @@
 import { RankingList } from '@/components/RankingList'
+import { AutoRefresh } from '@/components/AutoRefresh'
 import { getNationalRankings, getAllTeams } from '@/lib/espn'
 
 export default async function NationalRankingsPage() {
@@ -10,6 +11,7 @@ export default async function NationalRankingsPage() {
 
   return (
     <main className="mx-auto w-full min-w-0 max-w-2xl px-4 py-8 sm:px-6">
+      <AutoRefresh />
       <h1 className="text-2xl font-semibold">{pollName}</h1>
       <div className="mt-6">
         <RankingList

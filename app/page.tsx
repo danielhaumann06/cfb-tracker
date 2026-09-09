@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { TeamCard } from '@/components/TeamCard'
 import { PlayoffOddsTracker } from '@/components/PlayoffOddsTracker'
 import { SettingsMenu } from '@/components/SettingsMenu'
+import { AutoRefresh } from '@/components/AutoRefresh'
 import { LiveTicker } from '@/components/LiveTicker'
 import { NewsTicker } from '@/components/NewsTicker'
 import { StatLeadersCard } from '@/components/StatLeadersCard'
@@ -156,6 +157,7 @@ export default async function Home() {
 
   return (
     <>
+      <AutoRefresh />
       <div className="mx-auto w-full min-w-0 max-w-5xl px-4 pb-4 pt-10 sm:px-6 sm:pb-5 sm:pt-12">
         <div className="flex flex-wrap items-center gap-y-2 gap-x-2">
           {themeTeamLogo && (

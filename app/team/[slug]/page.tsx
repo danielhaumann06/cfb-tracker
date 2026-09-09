@@ -5,6 +5,7 @@ import { LiveScoreBadge } from '@/components/LiveScoreBadge'
 import { ScheduleTable } from '@/components/ScheduleTable'
 import { StatsSummary } from '@/components/StatsSummary'
 import { Headlines } from '@/components/Headlines'
+import { AutoRefresh } from '@/components/AutoRefresh'
 import { TRACKED_TEAMS_COOKIE, parseTrackedTeamsCookie } from '@/lib/teams'
 import {
   getTeamSummary,
@@ -62,6 +63,7 @@ export default async function TeamPage({
 
   return (
     <main className="mx-auto w-full min-w-0 max-w-4xl px-4 py-8 sm:px-6">
+      <AutoRefresh />
       <div className="flex items-center gap-4">
         {team.logo && (
           <Image src={team.logo} alt="" width={64} height={64} unoptimized />

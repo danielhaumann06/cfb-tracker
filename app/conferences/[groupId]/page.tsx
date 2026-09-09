@@ -9,6 +9,8 @@ import { ConferenceLayoutMenu } from '@/components/ConferenceLayoutMenu'
 import { WinLossRaceChart } from '@/components/WinLossRaceChart'
 import { RankingList } from '@/components/RankingList'
 import { NewsTicker } from '@/components/NewsTicker'
+import { StatLeadersCard } from '@/components/StatLeadersCard'
+import { AutoRefresh } from '@/components/AutoRefresh'
 import { FBS_CONFERENCES } from '@/lib/conferences'
 import {
   CONFERENCE_LAYOUT_COOKIE,
@@ -20,6 +22,7 @@ import {
   getConferenceStandings,
   getConferenceWinLossTimeline,
   getConferenceNews,
+  getConferenceStatLeaders,
   getAllTeams,
   getFpiSummary,
   type RankedTeam,
@@ -28,6 +31,7 @@ import {
   type TeamListEntry,
   type ConferenceTimeline,
   type Headline,
+  type StatLeaderCategory,
 } from '@/lib/espn'
 
 export default async function ConferenceBreakdownPage({
@@ -51,16 +55,25 @@ export default async function ConferenceBreakdownPage({
   let timeline: ConferenceTimeline
   let news: Headline[]
   let schedule: ConferenceScheduleData
+  let statLeaders: StatLeaderCategory[]
   try {
-    ;[{ conferenceName, teams }, games, allTeams, timeline, news, schedule] =
-      await Promise.all([
-        getConferenceStandings(groupId),
-        getConferenceScoreboard(groupId),
-        getAllTeams(),
-        getConferenceWinLossTimeline(groupId),
-        getConferenceNews(groupId),
-        getConferenceSchedule(groupId),
-      ])
+    ;[
+      { conferenceName, teams },
+      games,
+      allTeams,
+      timeline,
+      news,
+      schedule,
+      statLeaders,
+    ] = await Promise.all([
+      getConferenceStandings(groupId),
+      getConferenceScoreboard(groupId),
+      getAllTeams(),
+      getConferenceWinLossTimeline(groupId),
+      getConferenceNews(groupId),
+      getConferenceSchedule(groupId),
+      getConferenceStatLeaders(groupId),
+    ])
   } catch {
     notFound()
   }
@@ -121,10 +134,19 @@ export default async function ConferenceBreakdownPage({
         </div>
       </section>
     ),
+    statLeaders: (
+      <div className="mt-6">
+        <StatLeadersCard
+          categories={statLeaders}
+          subtitle={`${conferenceName} leaders this season`}
+        />
+      </div>
+    ),
   }
 
   return (
     <main className="mx-auto w-full min-w-0 max-w-4xl px-4 py-8 sm:px-6">
+      <AutoRefresh />
       <div className="flex items-center justify-between gap-2">
         <h1 className="flex min-w-0 items-center gap-2.5 text-2xl font-semibold">
           <Image

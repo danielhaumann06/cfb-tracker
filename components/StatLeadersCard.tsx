@@ -83,8 +83,12 @@ function LeaderGroup({
 
 export function StatLeadersCard({
   categories,
+  title = 'Stat Leaders',
+  subtitle = 'Power Five leaders this season',
 }: {
   categories: StatLeaderCategory[]
+  title?: string
+  subtitle?: string
 }) {
   if (categories.length === 0) return null
 
@@ -93,10 +97,8 @@ export function StatLeadersCard({
 
   return (
     <section className="rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-5 shadow-[var(--shadow-card)]">
-      <h2 className="font-semibold">Stat Leaders</h2>
-      <p className="text-sm text-[var(--text-muted)]">
-        Power Five leaders this season
-      </p>
+      <h2 className="font-semibold">{title}</h2>
+      <p className="text-sm text-[var(--text-muted)]">{subtitle}</p>
       <div className="mt-4 space-y-6">
         <LeaderGroup title="Offensive Leaders" categories={offense} />
         <LeaderGroup title="Defensive Leaders" categories={defense} />

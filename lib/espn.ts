@@ -333,7 +333,7 @@ export async function getConferenceSchedule(
 
   const [res, allTeams] = await Promise.all([
     fetch(`${SITE_BASE}/scoreboard?${params.toString()}`, {
-      next: { revalidate: 300 },
+      next: { revalidate: 30 },
     }),
     getAllTeams(),
   ])
@@ -435,7 +435,7 @@ export async function getAllTeams(): Promise<TeamListEntry[]> {
 
 export async function getTeamSummary(espnId: string): Promise<TeamSummary> {
   const res = await fetch(`${SITE_BASE}/teams/${espnId}`, {
-    next: { revalidate: 3600 },
+    next: { revalidate: 30 },
   })
   const data = await res.json()
   const team = data.team
@@ -470,7 +470,7 @@ export async function getTeamSummary(espnId: string): Promise<TeamSummary> {
 
 export async function getTeamSchedule(espnId: string): Promise<GameSummary[]> {
   const res = await fetch(`${SITE_BASE}/teams/${espnId}/schedule`, {
-    next: { revalidate: 60 },
+    next: { revalidate: 30 },
   })
   const data = await res.json()
   const events = data.events ?? []
@@ -500,7 +500,7 @@ export async function getTeamSchedule(espnId: string): Promise<GameSummary[]> {
 
 export async function getGameOdds(eventId: string): Promise<GameOdds | null> {
   const res = await fetch(`${SITE_BASE}/summary?event=${eventId}`, {
-    next: { revalidate: 60 },
+    next: { revalidate: 30 },
   })
   const data = await res.json()
   const pick = data.pickcenter?.[0]
@@ -539,7 +539,7 @@ export async function getFpiSummary(espnId: string): Promise<FpiSummary | null> 
   const season = currentSeasonYear()
   const res = await fetch(
     `${CORE_BASE}/seasons/${season}/powerindex/${espnId}`,
-    { next: { revalidate: 900 } }
+    { next: { revalidate: 30 } }
   )
   if (!res.ok) return null
   const data = await res.json()
@@ -561,7 +561,7 @@ export async function getFpiSummary(espnId: string): Promise<FpiSummary | null> 
 
 async function getApPoll(): Promise<any> {
   const res = await fetch(`${SITE_BASE}/rankings`, {
-    next: { revalidate: 60 },
+    next: { revalidate: 30 },
   })
   if (!res.ok) return null
   const data = await res.json()
@@ -630,7 +630,7 @@ async function fetchPollWeek(
 ): Promise<RawPollWeek | null> {
   const res = await fetch(
     `${RANKINGS_CORE_BASE}/${season}/types/${seasonType}/weeks/${week}/rankings/${pollId}?lang=en&region=us`,
-    { next: { revalidate: 60 } }
+    { next: { revalidate: 30 } }
   )
   if (!res.ok) return null
   const data = await res.json()
@@ -841,7 +841,7 @@ export async function getConferenceStandings(groupId: string): Promise<{
   teams: RankedTeam[]
 }> {
   const res = await fetch(`${STANDINGS_BASE}?group=${groupId}`, {
-    next: { revalidate: 3600 },
+    next: { revalidate: 30 },
   })
   if (!res.ok) return { conferenceName: 'Conference', teams: [] }
   const data = await res.json()
@@ -1112,68 +1112,93 @@ async function resolvePlayerBasics(
 }
 
 // ESPN's season leaders endpoint spans all of college football (FBS and
-// below), so filter down to Power Five teams (reusing the same
-// conference-standings roster already used elsewhere) rather than showing
-// whoever leads across every division.
-export async function getPowerFiveStatLeaders(): Promise<StatLeaderCategory[]> {
+// below), with no way to ask it to scope to a conference - so both the
+// Power Five card and each per-conference card pull from this same
+// national top-300 pool and filter down to the teams they care about.
+// limit=300 is as high as this can go and stay under Next.js's 2MB
+// fetch-cache ceiling (limit=400 already comes in over 2MB); some
+// categories (e.g. Tackles) still run thin for smaller conferences since
+// their leaders don't crack the national top 300 this early in the
+// season - that's a real data gap, not a bug, and those categories just
+// show fewer than 5 (or don't show at all).
+async function getLeaderPool(): Promise<any[]> {
   const season = currentSeasonYear()
-  const [res, p5TeamIds, allTeams] = await Promise.all([
-    fetch(`${CORE_BASE}/seasons/${season}/types/2/leaders?limit=200`, {
-      next: { revalidate: 900 },
-    }),
-    getPowerFiveTeamIds(),
-    getAllTeams(),
-  ])
+  const res = await fetch(
+    `${CORE_BASE}/seasons/${season}/types/2/leaders?limit=300`,
+    { next: { revalidate: 30 } }
+  )
   if (!res.ok) return []
   const data = await res.json()
+  return data.categories ?? []
+}
+
+async function resolveCategoryLeaders(
+  category: any,
+  teamIds: Set<string>,
+  teamById: Map<string, TeamListEntry>
+): Promise<StatLeader[]> {
+  const candidates = (category.leaders ?? [])
+    .map((l: any) => ({
+      athleteId: idFromRef(l.athlete?.$ref),
+      teamId: idFromRef(l.team?.$ref),
+      value: l.displayValue as string,
+    }))
+    .filter((c: any) => c.athleteId && teamIds.has(c.teamId))
+    .slice(0, 5)
+
+  const resolvedPlayers = await Promise.all(
+    candidates.map((c: any) => resolvePlayerBasics(c.athleteId))
+  )
+
+  return candidates.map((c: any, i: number) => {
+    const team = teamById.get(c.teamId)
+    const player = resolvedPlayers[i]
+    return {
+      playerId: c.athleteId,
+      playerName: player?.name ?? '',
+      headshot: player?.headshot ?? '',
+      teamAbbreviation: team?.abbreviation ?? '',
+      teamLogo: team?.logo ?? '',
+      teamSlug: team?.slug ?? '',
+      value: c.value,
+    }
+  })
+}
+
+async function getStatLeadersForTeams(
+  teamIds: Set<string>
+): Promise<StatLeaderCategory[]> {
+  const [pool, allTeams] = await Promise.all([getLeaderPool(), getAllTeams()])
   const teamById = new Map(allTeams.map((t) => [t.id, t]))
 
-  const categories: StatLeaderCategory[] = []
-
-  for (const wanted of STAT_LEADER_CATEGORIES) {
-    const category = (data.categories ?? []).find(
-      (c: any) => c.name === wanted.key
-    )
-    if (!category) continue
-
-    const candidates = (category.leaders ?? [])
-      .map((l: any) => ({
-        athleteId: idFromRef(l.athlete?.$ref),
-        teamId: idFromRef(l.team?.$ref),
-        value: l.displayValue as string,
-      }))
-      .filter((c: any) => c.athleteId && p5TeamIds.has(c.teamId))
-      .slice(0, 5)
-
-    const resolvedPlayers = await Promise.all(
-      candidates.map((c: any) => resolvePlayerBasics(c.athleteId))
-    )
-
-    const leaders: StatLeader[] = candidates.map((c: any, i: number) => {
-      const team = teamById.get(c.teamId)
-      const player = resolvedPlayers[i]
+  const resolved = await Promise.all(
+    STAT_LEADER_CATEGORIES.map(async (wanted) => {
+      const category = pool.find((c: any) => c.name === wanted.key)
+      if (!category) return null
+      const leaders = await resolveCategoryLeaders(category, teamIds, teamById)
+      if (leaders.length === 0) return null
       return {
-        playerId: c.athleteId,
-        playerName: player?.name ?? '',
-        headshot: player?.headshot ?? '',
-        teamAbbreviation: team?.abbreviation ?? '',
-        teamLogo: team?.logo ?? '',
-        teamSlug: team?.slug ?? '',
-        value: c.value,
-      }
-    })
-
-    if (leaders.length > 0) {
-      categories.push({
         name: wanted.key,
         displayName: wanted.label,
         group: wanted.group,
         leaders,
-      })
-    }
-  }
+      }
+    })
+  )
 
-  return categories
+  return resolved.filter((c): c is StatLeaderCategory => c !== null)
+}
+
+export async function getPowerFiveStatLeaders(): Promise<StatLeaderCategory[]> {
+  const p5TeamIds = await getPowerFiveTeamIds()
+  return getStatLeadersForTeams(p5TeamIds)
+}
+
+export async function getConferenceStatLeaders(
+  groupId: string
+): Promise<StatLeaderCategory[]> {
+  const { teams } = await getConferenceStandings(groupId)
+  return getStatLeadersForTeams(new Set(teams.map((t) => t.id)))
 }
 
 export interface TeamBoxscore {

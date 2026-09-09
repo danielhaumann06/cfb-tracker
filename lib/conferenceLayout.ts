@@ -5,6 +5,7 @@ export type ConferenceSectionKey =
   | 'standings'
   | 'odds'
   | 'raceChart'
+  | 'statLeaders'
 
 export const CONFERENCE_SECTION_LABELS: Record<ConferenceSectionKey, string> = {
   ticker: 'This Week Ticker',
@@ -13,6 +14,7 @@ export const CONFERENCE_SECTION_LABELS: Record<ConferenceSectionKey, string> = {
   standings: 'Standings',
   odds: 'Odds to Win the Conference',
   raceChart: 'Race for the Title',
+  statLeaders: 'Stat Leaders',
 }
 
 const DEFAULT_ORDER: ConferenceSectionKey[] = [
@@ -22,6 +24,7 @@ const DEFAULT_ORDER: ConferenceSectionKey[] = [
   'standings',
   'odds',
   'raceChart',
+  'statLeaders',
 ]
 
 export const CONFERENCE_LAYOUT_COOKIE = 'conference_layout'
