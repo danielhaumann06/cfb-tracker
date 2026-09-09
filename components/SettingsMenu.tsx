@@ -175,10 +175,18 @@ export function SettingsMenu({
         type="button"
         onClick={() => setView(view === 'closed' ? 'menu' : 'closed')}
         aria-label="Menu"
-        className="flex items-center gap-1.5 rounded-lg p-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-1)] hover:text-[var(--foreground)]"
+        className="relative z-30 flex items-center gap-1.5 rounded-lg p-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-1)] hover:text-[var(--foreground)]"
       >
         <MenuIcon />
       </button>
+
+      {view !== 'closed' && (
+        <div
+          className="fixed inset-0 z-20"
+          aria-hidden="true"
+          onClick={() => setView('closed')}
+        />
+      )}
 
       {view !== 'closed' && (
         <section

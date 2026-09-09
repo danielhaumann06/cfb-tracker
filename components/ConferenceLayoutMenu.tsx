@@ -35,11 +35,19 @@ export function ConferenceLayoutMenu({
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-label="Reorder page sections"
-        className="flex items-center gap-1.5 rounded-lg border border-[var(--border-hairline)] px-3 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-1)] hover:text-[var(--foreground)]"
+        className="relative z-30 flex items-center gap-1.5 rounded-lg border border-[var(--border-hairline)] px-3 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-1)] hover:text-[var(--foreground)]"
       >
         <EditIcon />
         Reorder
       </button>
+
+      {open && (
+        <div
+          className="fixed inset-0 z-20"
+          aria-hidden="true"
+          onClick={() => setOpen(false)}
+        />
+      )}
 
       {open && (
         <section className="absolute right-0 top-full z-30 mt-2 w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-4 shadow-[var(--shadow-card-hover)]">
