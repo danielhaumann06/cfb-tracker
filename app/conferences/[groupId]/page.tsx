@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import type { ReactNode } from 'react'
 import { ConferenceTicker } from '@/components/ConferenceTicker'
+import { ConferenceSchedule } from '@/components/ConferenceSchedule'
 import { ConferenceOddsTracker } from '@/components/ConferenceOddsTracker'
 import { ConferenceLayoutMenu } from '@/components/ConferenceLayoutMenu'
 import { WinLossRaceChart } from '@/components/WinLossRaceChart'
@@ -15,6 +16,7 @@ import {
 } from '@/lib/conferenceLayout'
 import {
   getConferenceScoreboard,
+  getConferenceSchedule,
   getConferenceStandings,
   getConferenceWinLossTimeline,
   getConferenceNews,
@@ -22,6 +24,7 @@ import {
   getFpiSummary,
   type RankedTeam,
   type ConferenceGame,
+  type ConferenceSchedule as ConferenceScheduleData,
   type TeamListEntry,
   type ConferenceTimeline,
   type Headline,
@@ -47,14 +50,16 @@ export default async function ConferenceBreakdownPage({
   let allTeams: TeamListEntry[]
   let timeline: ConferenceTimeline
   let news: Headline[]
+  let schedule: ConferenceScheduleData
   try {
-    ;[{ conferenceName, teams }, games, allTeams, timeline, news] =
+    ;[{ conferenceName, teams }, games, allTeams, timeline, news, schedule] =
       await Promise.all([
         getConferenceStandings(groupId),
         getConferenceScoreboard(groupId),
         getAllTeams(),
         getConferenceWinLossTimeline(groupId),
         getConferenceNews(groupId),
+        getConferenceSchedule(groupId),
       ])
   } catch {
     notFound()
@@ -77,6 +82,11 @@ export default async function ConferenceBreakdownPage({
     ticker: (
       <div className="mt-6">
         <ConferenceTicker groupId={groupId} initialGames={games} />
+      </div>
+    ),
+    schedule: (
+      <div className="mt-6">
+        <ConferenceSchedule groupId={groupId} initialSchedule={schedule} />
       </div>
     ),
     news: (

@@ -270,6 +270,101 @@ export async function getConferenceScoreboard(
   })
 }
 
+export interface ScheduleTeam {
+  id: string
+  name: string
+  abbreviation: string
+  logo: string
+  slug: string
+  score: string | null
+}
+
+export interface ScheduleGame {
+  id: string
+  state: GameState
+  statusDetail: string
+  date: string
+  network: string | null
+  home: ScheduleTeam
+  away: ScheduleTeam
+}
+
+export interface ConferenceWeekOption {
+  week: number
+  label: string
+}
+
+export interface ConferenceSchedule {
+  weekNumber: number
+  weeks: ConferenceWeekOption[]
+  games: ScheduleGame[]
+}
+
+export async function getConferenceSchedule(
+  groupId: string,
+  week?: number
+): Promise<ConferenceSchedule> {
+  const params = new URLSearchParams({ groups: groupId })
+  if (week != null) {
+    params.set('week', String(week))
+    params.set('seasontype', '2')
+  }
+
+  const [res, allTeams] = await Promise.all([
+    fetch(`${SITE_BASE}/scoreboard?${params.toString()}`, {
+      next: { revalidate: 300 },
+    }),
+    getAllTeams(),
+  ])
+  if (!res.ok) return { weekNumber: week ?? 1, weeks: [], games: [] }
+  const data = await res.json()
+  const slugById = new Map(allTeams.map((t) => [t.id, t.slug]))
+
+  // The scoreboard's own calendar lists every regular-season week (label +
+  // date range) regardless of which week was requested - use it to build
+  // the week picker rather than hardcoding a week count.
+  const regularSeason = (data.leagues?.[0]?.calendar ?? []).find(
+    (c: any) => c.value === '2'
+  )
+  const weeks: ConferenceWeekOption[] = (regularSeason?.entries ?? []).map(
+    (e: any) => ({ week: Number(e.value), label: e.label })
+  )
+
+  const mapScheduleTeam = (competitor: any): ScheduleTeam => ({
+    id: competitor.team.id,
+    name: competitor.team.shortDisplayName ?? competitor.team.displayName,
+    abbreviation: competitor.team.abbreviation,
+    logo: competitor.team.logo ?? '',
+    slug: slugById.get(competitor.team.id) ?? '',
+    score: competitor.score ?? null,
+  })
+
+  const games: ScheduleGame[] = (data.events ?? []).map((event: any) => {
+    const competition = event.competitions[0]
+    const home = competition.competitors.find(
+      (c: any) => c.homeAway === 'home'
+    )
+    const away = competition.competitors.find(
+      (c: any) => c.homeAway === 'away'
+    )
+
+    return {
+      id: event.id,
+      date: event.date,
+      network: competition.broadcasts?.[0]?.names?.[0] ?? null,
+      home: mapScheduleTeam(home),
+      away: mapScheduleTeam(away),
+      ...parseStatus(competition.status),
+    }
+  })
+
+  return {
+    weekNumber: data.week?.number ?? week ?? 1,
+    weeks,
+    games,
+  }
+}
+
 export interface TeamListEntry {
   id: string
   name: string

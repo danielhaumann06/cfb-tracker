@@ -1,5 +1,6 @@
 export type ConferenceSectionKey =
   | 'ticker'
+  | 'schedule'
   | 'news'
   | 'standings'
   | 'odds'
@@ -7,6 +8,7 @@ export type ConferenceSectionKey =
 
 export const CONFERENCE_SECTION_LABELS: Record<ConferenceSectionKey, string> = {
   ticker: 'This Week Ticker',
+  schedule: 'Schedule',
   news: 'News Ticker',
   standings: 'Standings',
   odds: 'Odds to Win the Conference',
@@ -15,6 +17,7 @@ export const CONFERENCE_SECTION_LABELS: Record<ConferenceSectionKey, string> = {
 
 const DEFAULT_ORDER: ConferenceSectionKey[] = [
   'ticker',
+  'schedule',
   'news',
   'standings',
   'odds',
