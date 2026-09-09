@@ -6,6 +6,7 @@ import { PlayoffOddsTracker } from '@/components/PlayoffOddsTracker'
 import { SettingsMenu } from '@/components/SettingsMenu'
 import { LiveTicker } from '@/components/LiveTicker'
 import { NewsTicker } from '@/components/NewsTicker'
+import { StatLeadersCard } from '@/components/StatLeadersCard'
 import { TopTabs } from '@/components/TopTabs'
 import {
   TRACKED_TEAMS_COOKIE,
@@ -27,6 +28,7 @@ import {
   getLivePowerFiveGames,
   getTop25Scores,
   getTopHeadlines,
+  getPowerFiveStatLeaders,
   nextGame,
 } from '@/lib/espn'
 
@@ -64,11 +66,12 @@ export default async function Home() {
   const themeTeamLogo =
     teams.find(({ team }) => team.id === themeTeamId)?.team.logo ??
     (await getTeamSummary(themeTeamId).catch(() => null))?.logo
-  const [{ teams: nationalRankings }, liveGames, headlines] =
+  const [{ teams: nationalRankings }, liveGames, headlines, statLeaders] =
     await Promise.all([
       getNationalRankings(),
       getLivePowerFiveGames(),
       getTopHeadlines(),
+      getPowerFiveStatLeaders(),
     ])
   const tickerMode = liveGames.length > 0 ? 'live' : 'top25'
   const tickerGames =
@@ -139,6 +142,12 @@ export default async function Home() {
       dashboardSections.push(
         <div key="newsTicker" className="mt-6">
           <NewsTicker headlines={headlines} />
+        </div>
+      )
+    } else if (item.key === 'statLeaders') {
+      dashboardSections.push(
+        <div key="statLeaders" className="mt-6">
+          <StatLeadersCard categories={statLeaders} />
         </div>
       )
     }

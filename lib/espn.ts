@@ -1046,6 +1046,126 @@ export async function getConferenceNews(groupId: string): Promise<Headline[]> {
     .slice(0, 20)
 }
 
+export interface StatLeader {
+  playerId: string
+  playerName: string
+  headshot: string
+  teamAbbreviation: string
+  teamLogo: string
+  teamSlug: string
+  value: string
+}
+
+export interface StatLeaderCategory {
+  name: string
+  displayName: string
+  leaders: StatLeader[]
+}
+
+const STAT_LEADER_CATEGORIES: { key: string; label: string }[] = [
+  { key: 'passingYards', label: 'Passing' },
+  { key: 'rushingYards', label: 'Rushing' },
+  { key: 'receivingYards', label: 'Receiving' },
+  { key: 'sacks', label: 'Sacks' },
+]
+
+function idFromRef(ref: string | undefined): string {
+  return ref?.match(/\/(?:athletes|teams)\/(\d+)/)?.[1] ?? ''
+}
+
+async function getPowerFiveTeamIds(): Promise<Set<string>> {
+  const results = await Promise.all(
+    POWER_FIVE_GROUPS.map((g) =>
+      getConferenceStandings(g).catch(() => ({ teams: [] as RankedTeam[] }))
+    )
+  )
+  const ids = new Set<string>()
+  for (const { teams } of results) {
+    for (const t of teams) ids.add(t.id)
+  }
+  return ids
+}
+
+async function resolvePlayerBasics(
+  playerId: string
+): Promise<{ name: string; headshot: string } | null> {
+  const res = await fetch(`${ATHLETE_BASE}/${playerId}`, {
+    next: { revalidate: 3600 },
+  })
+  if (!res.ok) return null
+  const data = await res.json()
+  const athlete = data.athlete
+  if (!athlete) return null
+  return {
+    name: athlete.displayName ?? athlete.fullName ?? '',
+    headshot: athlete.headshot?.href ?? '',
+  }
+}
+
+// ESPN's season leaders endpoint spans all of college football (FBS and
+// below), so filter down to Power Five teams (reusing the same
+// conference-standings roster already used elsewhere) rather than showing
+// whoever leads across every division.
+export async function getPowerFiveStatLeaders(): Promise<StatLeaderCategory[]> {
+  const season = currentSeasonYear()
+  const [res, p5TeamIds, allTeams] = await Promise.all([
+    fetch(`${CORE_BASE}/seasons/${season}/types/2/leaders?limit=50`, {
+      next: { revalidate: 900 },
+    }),
+    getPowerFiveTeamIds(),
+    getAllTeams(),
+  ])
+  if (!res.ok) return []
+  const data = await res.json()
+  const teamById = new Map(allTeams.map((t) => [t.id, t]))
+
+  const categories: StatLeaderCategory[] = []
+
+  for (const wanted of STAT_LEADER_CATEGORIES) {
+    const category = (data.categories ?? []).find(
+      (c: any) => c.name === wanted.key
+    )
+    if (!category) continue
+
+    const candidates = (category.leaders ?? [])
+      .map((l: any) => ({
+        athleteId: idFromRef(l.athlete?.$ref),
+        teamId: idFromRef(l.team?.$ref),
+        value: l.displayValue as string,
+      }))
+      .filter((c: any) => c.athleteId && p5TeamIds.has(c.teamId))
+      .slice(0, 5)
+
+    const resolvedPlayers = await Promise.all(
+      candidates.map((c: any) => resolvePlayerBasics(c.athleteId))
+    )
+
+    const leaders: StatLeader[] = candidates.map((c: any, i: number) => {
+      const team = teamById.get(c.teamId)
+      const player = resolvedPlayers[i]
+      return {
+        playerId: c.athleteId,
+        playerName: player?.name ?? '',
+        headshot: player?.headshot ?? '',
+        teamAbbreviation: team?.abbreviation ?? '',
+        teamLogo: team?.logo ?? '',
+        teamSlug: team?.slug ?? '',
+        value: c.value,
+      }
+    })
+
+    if (leaders.length > 0) {
+      categories.push({
+        name: wanted.key,
+        displayName: wanted.label,
+        leaders,
+      })
+    }
+  }
+
+  return categories
+}
+
 export interface TeamBoxscore {
   teamId: string
   teamName: string

@@ -1,4 +1,8 @@
-export type DashboardSectionKey = 'liveTicker' | 'playoffOdds' | 'newsTicker'
+export type DashboardSectionKey =
+  | 'liveTicker'
+  | 'playoffOdds'
+  | 'newsTicker'
+  | 'statLeaders'
 
 export type DashboardItem =
   | { type: 'team'; id: string }
@@ -8,6 +12,7 @@ const SECTION_KEYS: DashboardSectionKey[] = [
   'liveTicker',
   'playoffOdds',
   'newsTicker',
+  'statLeaders',
 ]
 
 export const DASHBOARD_ORDER_COOKIE = 'dashboard_order'
@@ -17,13 +22,15 @@ export function dashboardItemKey(item: DashboardItem): string {
 }
 
 // No saved cookie (first visit ever) reproduces today's fixed layout:
-// Live Ticker, News Ticker, then team cards, then Playoff Odds.
+// Live Ticker, News Ticker, then team cards, then Playoff Odds, then
+// Stat Leaders.
 function defaultOrder(trackedTeamIds: string[]): DashboardItem[] {
   return [
     { type: 'section', key: 'liveTicker' },
     { type: 'section', key: 'newsTicker' },
     ...trackedTeamIds.map((id): DashboardItem => ({ type: 'team', id })),
     { type: 'section', key: 'playoffOdds' },
+    { type: 'section', key: 'statLeaders' },
   ]
 }
 

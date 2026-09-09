@@ -23,6 +23,7 @@ const DASHBOARD_SECTION_LABELS: Record<DashboardSectionKey, string> = {
   liveTicker: 'Live Ticker',
   playoffOdds: 'Playoff Odds Tracker',
   newsTicker: 'News Ticker',
+  statLeaders: 'Stat Leaders',
 }
 
 type View = 'closed' | 'menu' | 'teams' | 'theme' | 'reorder'
