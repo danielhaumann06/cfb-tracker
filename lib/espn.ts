@@ -617,7 +617,7 @@ function teamIdFromRef(ref: string | undefined): string {
 interface RawPollWeek {
   pollName: string
   weekLabel: string
-  ranks: { teamId: string; rank: number; record: string }[]
+  ranks: { teamId: string; rank: number; record: string; trend: string }[]
   others: { teamId: string; points: number }[]
   droppedOut: { teamId: string; previousRank: number }[]
 }
@@ -643,6 +643,7 @@ async function fetchPollWeek(
       teamId: teamIdFromRef(r.team?.$ref),
       rank: r.current,
       record: r.record?.summary ?? '',
+      trend: r.trend ?? '-',
     })),
     others: (data.others ?? []).map((r: any) => ({
       teamId: teamIdFromRef(r.team?.$ref),
@@ -663,6 +664,7 @@ export interface PollTimelineTeam {
   slug: string
   color: string
   record: string
+  trend: string
 }
 
 export interface PollBubbleTeam {
@@ -777,7 +779,7 @@ export async function getPollTimeline(pollId: string): Promise<PollTimeline> {
 
   const teams: PollTimelineTeam[] = currentTeamIds.map((id) => {
     const info = infoById.get(id)
-    const record = latest.ranks.find((r) => r.teamId === id)?.record ?? ''
+    const rankEntry = latest.ranks.find((r) => r.teamId === id)
     return {
       id,
       name: info?.name ?? id,
@@ -785,7 +787,8 @@ export async function getPollTimeline(pollId: string): Promise<PollTimeline> {
       logo: info?.logo ?? '',
       slug: info?.slug ?? '',
       color: info?.color ?? '',
-      record,
+      record: rankEntry?.record ?? '',
+      trend: rankEntry?.trend ?? '-',
     }
   })
 

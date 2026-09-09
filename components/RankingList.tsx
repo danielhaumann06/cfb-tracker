@@ -8,6 +8,28 @@ export interface RankingListEntry {
   logo: string
   record: string
   slug?: string
+  trend?: string
+}
+
+function TrendBadge({ trend }: { trend: string }) {
+  // Always reserve the same width, even with nothing to show, so team
+  // logos/names still line up across rows within the same list.
+  if (!trend || trend === '-') {
+    return <span className="w-9 shrink-0" />
+  }
+  const isUp = trend.startsWith('+')
+
+  return (
+    <span
+      className={`w-9 shrink-0 text-right text-xs font-semibold ${
+        isUp
+          ? 'text-green-600 dark:text-green-400'
+          : 'text-red-600 dark:text-red-400'
+      }`}
+    >
+      {trend}
+    </span>
+  )
 }
 
 export function RankingList({ entries }: { entries: RankingListEntry[] }) {
@@ -24,6 +46,7 @@ export function RankingList({ entries }: { entries: RankingListEntry[] }) {
               <span className="w-6 text-right text-sm text-[var(--text-muted)]">
                 {entry.rank}
               </span>
+              {entry.trend !== undefined && <TrendBadge trend={entry.trend} />}
               {entry.logo && (
                 <Image
                   src={entry.logo}

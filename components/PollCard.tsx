@@ -53,6 +53,7 @@ export function PollCard({
           logo: t.logo,
           record: t.record,
           slug: t.slug,
+          trend: t.trend,
         }))}
       />
 
