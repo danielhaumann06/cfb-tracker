@@ -84,9 +84,10 @@ export default async function Home() {
     trackedTeams.map((t) => t.id)
   )
   const funFacts = buildFunFacts(
-    teams.map((bundle) => ({
-      ...bundle,
-      nationalRank: rankById.get(bundle.team.id) ?? null,
+    teams.map(({ slug, team }) => ({
+      slug,
+      team,
+      nationalRank: rankById.get(team.id) ?? null,
     }))
   )
   const newsEntries = interleaveWithFunFacts(headlines, funFacts)

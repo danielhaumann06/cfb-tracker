@@ -1,4 +1,5 @@
-import type { FpiSummary, GameOdds, GameSummary, Headline, TeamSummary } from './espn'
+import type { Headline, TeamSummary } from './espn'
+import { TEAM_TRIVIA } from './teamTrivia'
 
 export interface FunFact {
   text: string
@@ -8,25 +9,17 @@ export interface FunFact {
 interface TeamBundle {
   slug: string
   team: TeamSummary
-  fpi: FpiSummary | null
-  next: GameSummary | null
-  odds: GameOdds | null
   nationalRank: number | null
 }
 
-function possessive(name: string): string {
-  return name.endsWith('s') ? `${name}'` : `${name}'s`
-}
-
-// Every fact here is derived straight from data the dashboard already
-// fetches for this team (record, streak, FPI, next game/odds) - no
-// fabricated or hardcoded trivia, since those numbers change every week and
-// a stale "fun fact" would just be wrong.
+// A small amount of live-stat flavor (current streak, AP rank) mixed with
+// the hand-curated program history/trivia in lib/teamTrivia.ts - trivia
+// makes up most of the pool since that's the actual "fun fact" ask (program
+// history, streaks, championships), not routine per-week stats.
 function candidateFacts(bundle: TeamBundle): string[] {
-  const { team, fpi, next, odds, nationalRank } = bundle
+  const { team, nationalRank } = bundle
   const name = team.name
-  const possessiveName = possessive(name)
-  const facts: string[] = []
+  const facts: string[] = [...(TEAM_TRIVIA[team.id] ?? [])]
 
   if (team.streak > 0) {
     facts.push(
@@ -39,35 +32,6 @@ function candidateFacts(bundle: TeamBundle): string[] {
 
   if (nationalRank != null) {
     facts.push(`${name} is ranked #${nationalRank} in the latest AP poll.`)
-  }
-
-  if (fpi?.fpiRank != null) {
-    facts.push(`${possessiveName} FPI ranks them #${fpi.fpiRank} nationally.`)
-  }
-
-  if (fpi?.probMakePlayoffs != null && fpi.probMakePlayoffs > 0) {
-    facts.push(
-      `${name} has a ${Math.round(fpi.probMakePlayoffs)}% chance to make the College Football Playoff, per FPI.`
-    )
-  }
-
-  if (team.pointsForPerGame > 0) {
-    facts.push(`${name} is averaging ${team.pointsForPerGame.toFixed(1)} points per game this season.`)
-  }
-
-  if (team.standingSummary) {
-    facts.push(`${name} sits ${team.standingSummary}.`)
-  }
-
-  if (next?.state === 'pre') {
-    const isHome = next.home.id === team.id
-    const opponent = isHome ? next.away : next.home
-    const weekday = new Date(next.date).toLocaleDateString('en-US', { weekday: 'long' })
-    facts.push(`${possessiveName} next game is ${weekday}, ${isHome ? 'vs.' : 'at'} ${opponent.name}.`)
-
-    if (odds?.details) {
-      facts.push(`${possessiveName} next game: ${odds.details}.`)
-    }
   }
 
   return facts
