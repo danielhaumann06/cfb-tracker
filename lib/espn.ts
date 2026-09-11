@@ -1715,6 +1715,65 @@ export async function getGameBoxscore(
   return { teams, players }
 }
 
+export interface GamePlay {
+  id: string
+  text: string
+  quarter: number
+  clock: string
+  awayScore: number
+  homeScore: number
+  scoringPlay: boolean
+}
+
+export interface GameDriveState {
+  possessionTeamId: string | null
+  downDistanceText: string | null
+  // Yards the team in possession needs to reach the end zone they're
+  // driving toward - 100 is their own goal line, 0 is a touchdown. Used to
+  // place the ball marker on the field graphic.
+  yardsToEndzone: number | null
+  plays: GamePlay[]
+}
+
+// data.drives.current only exists while a drive is still in progress (a
+// completed game only has .previous) - checking both means this same
+// function naturally works for a live game's current drive and, after it
+// ends, its last completed one.
+export async function getGameDrivePlays(eventId: string): Promise<GameDriveState> {
+  const res = await fetch(`${SITE_BASE}/summary?event=${eventId}`, {
+    next: { revalidate: 20 },
+  })
+  if (!res.ok) return { possessionTeamId: null, downDistanceText: null, yardsToEndzone: null, plays: [] }
+  const data = await res.json()
+
+  const drives = [
+    ...(data.drives?.previous ?? []),
+    ...(data.drives?.current ? [data.drives.current] : []),
+  ]
+  const allPlays: any[] = drives.flatMap((d: any) => d.plays ?? [])
+  const lastPlay = allPlays[allPlays.length - 1]
+
+  const plays: GamePlay[] = allPlays
+    .slice(-15)
+    .reverse()
+    .map((p: any) => ({
+      id: p.id,
+      text: p.text ?? '',
+      quarter: p.period?.number ?? 0,
+      clock: p.clock?.displayValue ?? '',
+      awayScore: p.awayScore ?? 0,
+      homeScore: p.homeScore ?? 0,
+      scoringPlay: Boolean(p.scoringPlay),
+    }))
+
+  return {
+    possessionTeamId: lastPlay?.end?.team?.id ?? null,
+    downDistanceText: lastPlay?.end?.downDistanceText ?? null,
+    yardsToEndzone: lastPlay?.end?.yardsToEndzone ?? null,
+    plays,
+  }
+}
+
 export interface PlayerSeasonStat {
   season: string
   values: string[]

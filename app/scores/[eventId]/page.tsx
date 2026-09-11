@@ -6,6 +6,7 @@ import {
   getGameOdds,
   getGamePredictor,
   getGameWinProbabilityHistory,
+  getGameDrivePlays,
   getTeamStatLeaders,
   getTeamSummary,
   getAllTeams,
@@ -22,12 +23,14 @@ export default async function GameCastPage({
   let odds
   let predictor
   let winProbability
+  let drivePlays
   try {
-    ;[status, odds, predictor, winProbability] = await Promise.all([
+    ;[status, odds, predictor, winProbability, drivePlays] = await Promise.all([
       getGameLiveStatus(eventId),
       getGameOdds(eventId),
       getGamePredictor(eventId),
       getGameWinProbabilityHistory(eventId),
+      getGameDrivePlays(eventId),
     ])
   } catch {
     notFound()
@@ -69,6 +72,7 @@ export default async function GameCastPage({
         initialOdds={odds}
         initialPredictor={predictor}
         initialWinProbability={winProbability}
+        initialDrivePlays={drivePlays}
         homeWheelTeam={{
           abbreviation: status.home.abbreviation,
           logo: status.home.logo,
