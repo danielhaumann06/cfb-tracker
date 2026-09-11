@@ -47,6 +47,11 @@ export function ScheduleTable({
             const won =
               decided && Number(self.score) > Number(opponent.score)
             const hasBoxscore = game.completed || game.state === 'in'
+            const resultColorClass = !decided
+              ? ''
+              : won
+                ? 'text-green-600 dark:text-green-400'
+                : 'text-red-600 dark:text-red-400'
 
             return (
               <tr
@@ -76,7 +81,7 @@ export function ScheduleTable({
                       className="underline decoration-[var(--border-hairline)] underline-offset-2 hover:decoration-current"
                     >
                       {game.completed ? (
-                        <span className={won ? 'text-[var(--seq-fill)]' : ''}>
+                        <span className={resultColorClass}>
                           {won ? 'W' : 'L'} {self.score}-{opponent.score}
                           {game.id === DISPUTED_GAME_ID && '*'}
                         </span>
