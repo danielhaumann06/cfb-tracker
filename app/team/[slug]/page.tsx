@@ -62,56 +62,67 @@ export default async function TeamPage({
   const oddsByGameId = await getUpcomingOdds(schedule)
 
   return (
-    <main className="mx-auto w-full min-w-0 max-w-4xl px-4 py-8 sm:px-6">
+    <>
       <AutoRefresh />
-      <div className="flex items-center gap-4">
-        {team.logo && (
-          <Image src={team.logo} alt="" width={64} height={64} unoptimized />
-        )}
-        <div>
-          <h1 className="text-2xl font-semibold">{team.name}</h1>
-          <p className="text-[var(--text-secondary)]">
-            {team.record} &middot; {team.standingSummary}
-          </p>
+      <div
+        className="w-full"
+        style={{
+          background: `linear-gradient(to bottom, color-mix(in srgb, #${team.color || '6b7280'} 15%, transparent), transparent 70%)`,
+        }}
+      >
+        <div className="mx-auto w-full min-w-0 max-w-4xl px-4 pt-8 sm:px-6">
+          <div className="flex items-center gap-4">
+            {team.logo && (
+              <Image src={team.logo} alt="" width={64} height={64} unoptimized />
+            )}
+            <div>
+              <h1 className="text-2xl font-semibold">{team.name}</h1>
+              <p className="text-[var(--text-secondary)]">
+                {team.record} &middot; {team.standingSummary}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {current?.state === 'in' && (
-        <div className="mt-6">
-          <LiveScoreBadge
-            eventId={current.id}
-            initial={{
-              home: current.home,
-              away: current.away,
-              state: current.state,
-              completed: current.completed,
-              statusDetail: current.statusDetail,
-            }}
-          />
-        </div>
-      )}
+      <main className="mx-auto w-full min-w-0 max-w-4xl px-4 pb-8 sm:px-6">
+        {current?.state === 'in' && (
+          <div className="mt-6">
+            <LiveScoreBadge
+              eventId={current.id}
+              initial={{
+                home: current.home,
+                away: current.away,
+                state: current.state,
+                completed: current.completed,
+                statusDetail: current.statusDetail,
+              }}
+            />
+          </div>
+        )}
 
-      <section className="mt-6">
-        <h2 className="mb-3 font-semibold">Stats</h2>
-        <StatsSummary team={team} fpi={fpi} nationalRank={nationalRank} />
-      </section>
-
-      {news.length > 0 && (
         <section className="mt-6">
-          <h2 className="mb-3 font-semibold">Headlines</h2>
-          <Headlines items={news} />
+          <h2 className="mb-3 font-semibold">Stats</h2>
+          <StatsSummary team={team} fpi={fpi} nationalRank={nationalRank} />
         </section>
-      )}
 
-      <section className="mt-6">
-        <h2 className="mb-3 font-semibold">Schedule</h2>
-        <ScheduleTable
-          slug={slug}
-          teamId={team.id}
-          games={schedule}
-          oddsByGameId={oddsByGameId}
-        />
-      </section>
-    </main>
+        {news.length > 0 && (
+          <section className="mt-6">
+            <h2 className="mb-3 font-semibold">Headlines</h2>
+            <Headlines items={news} />
+          </section>
+        )}
+
+        <section className="mt-6">
+          <h2 className="mb-3 font-semibold">Schedule</h2>
+          <ScheduleTable
+            slug={slug}
+            teamId={team.id}
+            games={schedule}
+            oddsByGameId={oddsByGameId}
+          />
+        </section>
+      </main>
+    </>
   )
 }
