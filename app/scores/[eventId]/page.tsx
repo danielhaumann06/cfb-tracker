@@ -46,7 +46,7 @@ export default async function GameCastPage({
 
   const homePanel: TeamLeadersPanel = {
     teamId: status.home.id,
-    name: status.home.name,
+    nickname: status.home.nickname,
     slug: slugById.get(status.home.id) ?? '',
     logo: status.home.logo,
     record: homeSummary.record,
@@ -54,7 +54,7 @@ export default async function GameCastPage({
   }
   const awayPanel: TeamLeadersPanel = {
     teamId: status.away.id,
-    name: status.away.name,
+    nickname: status.away.nickname,
     slug: slugById.get(status.away.id) ?? '',
     logo: status.away.logo,
     record: awaySummary.record,

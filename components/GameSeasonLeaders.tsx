@@ -4,7 +4,7 @@ import { STAT_LEADER_CATEGORIES, type StatLeader, type StatLeaderCategory } from
 
 export interface TeamLeadersPanel {
   teamId: string
-  name: string
+  nickname: string
   slug: string
   logo: string
   record: string
@@ -23,7 +23,7 @@ function TeamHeader({ team, align }: { team: TeamLeadersPanel; align: 'left' | '
         <Image src={team.logo} alt="" width={28} height={28} unoptimized className="shrink-0" />
       )}
       <div className="min-w-0">
-        <div className="truncate text-sm font-medium sm:text-base">{team.name}</div>
+        <div className="truncate text-sm font-medium sm:text-base">{team.nickname}</div>
         <div className="text-xs text-[var(--text-muted)] sm:text-sm">{team.record}</div>
       </div>
     </Link>
