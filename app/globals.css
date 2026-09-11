@@ -68,8 +68,14 @@ body {
   animation-iteration-count: infinite;
 }
 
-.animate-ticker:hover {
-  animation-play-state: paused;
+/* Pause-on-hover is only for real pointer devices (mice/trackpads) - on
+   touch devices, tapping a ticker item (they're links) leaves iOS Safari
+   stuck in a sticky :hover state with nothing to "unhover" it, permanently
+   pausing the scroll after the first tap. */
+@media (hover: hover) and (pointer: fine) {
+  .animate-ticker:hover {
+    animation-play-state: paused;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
