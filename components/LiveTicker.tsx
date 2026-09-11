@@ -35,6 +35,7 @@ function TickerItem({ game }: { game: LiveTickerGame }) {
       <TickerTeamScore team={game.home} />
       <span className="text-xs text-[var(--text-muted)]">
         {game.statusDetail}
+        {game.network && ` · ${game.network}`}
       </span>
     </div>
   )

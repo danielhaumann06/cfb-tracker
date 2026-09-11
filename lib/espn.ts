@@ -147,6 +147,7 @@ export interface TickerTeam {
 export interface LiveTickerGame {
   id: string
   statusDetail: string
+  network: string | null
   home: TickerTeam
   away: TickerTeam
 }
@@ -200,6 +201,7 @@ export async function getLivePowerFiveGames(): Promise<LiveTickerGame[]> {
         id: event.id,
         statusDetail:
           competition.status.type.shortDetail ?? competition.status.type.detail,
+        network: competition.broadcasts?.[0]?.names?.[0] ?? null,
         home: mapTickerTeam(home),
         away: mapTickerTeam(away),
       })
@@ -229,6 +231,7 @@ export async function getTop25Scores(): Promise<LiveTickerGame[]> {
     .map((g) => ({
       id: g.id,
       statusDetail: g.statusDetail,
+      network: g.network,
       home: {
         name: g.home.abbreviation,
         abbreviation: g.home.abbreviation,
