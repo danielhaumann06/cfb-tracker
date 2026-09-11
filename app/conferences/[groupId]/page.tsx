@@ -104,7 +104,7 @@ export default async function ConferenceBreakdownPage({
     ),
     news: (
       <div className="mt-6">
-        <NewsTicker headlines={news} />
+        <NewsTicker entries={news.map((headline) => ({ kind: 'headline' as const, headline }))} />
       </div>
     ),
     standings: (

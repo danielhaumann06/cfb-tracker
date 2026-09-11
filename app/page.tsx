@@ -9,6 +9,7 @@ import { LiveTicker } from '@/components/LiveTicker'
 import { NewsTicker } from '@/components/NewsTicker'
 import { StatLeadersCard } from '@/components/StatLeadersCard'
 import { TopTabs } from '@/components/TopTabs'
+import { buildFunFacts, interleaveWithFunFacts } from '@/lib/funFacts'
 import {
   TRACKED_TEAMS_COOKIE,
   THEME_TEAM_COOKIE,
@@ -82,6 +83,13 @@ export default async function Home() {
     cookieStore.get(DASHBOARD_ORDER_COOKIE)?.value,
     trackedTeams.map((t) => t.id)
   )
+  const funFacts = buildFunFacts(
+    teams.map((bundle) => ({
+      ...bundle,
+      nationalRank: rankById.get(bundle.team.id) ?? null,
+    }))
+  )
+  const newsEntries = interleaveWithFunFacts(headlines, funFacts)
 
   const teamById = new Map(teams.map((t) => [t.team.id, t]))
   const dashboardSections: ReactNode[] = []
@@ -142,7 +150,7 @@ export default async function Home() {
     } else if (item.key === 'newsTicker') {
       dashboardSections.push(
         <div key="newsTicker" className="mt-6">
-          <NewsTicker headlines={headlines} />
+          <NewsTicker entries={newsEntries} />
         </div>
       )
     } else if (item.key === 'statLeaders') {
