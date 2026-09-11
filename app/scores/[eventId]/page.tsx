@@ -79,6 +79,8 @@ export default async function GameCastPage({
           logo: status.away.logo,
           color: awaySummary.color,
         }}
+        homeSlug={slugById.get(status.home.id) ?? ''}
+        awaySlug={slugById.get(status.away.id) ?? ''}
       />
 
       <div className="mt-6">

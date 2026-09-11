@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import Link from 'next/link'
 import type { GameTeam } from '@/lib/espn'
 
 function formatKickoff(dateIso: string): string {
@@ -13,12 +14,14 @@ function formatKickoff(dateIso: string): string {
 
 function TeamBlock({
   team,
+  slug,
   align,
 }: {
   team: GameTeam
+  slug: string
   align: 'left' | 'right'
 }) {
-  return (
+  const content = (
     <div
       className={`flex min-w-0 items-center gap-3 ${
         align === 'right' ? 'flex-row-reverse text-right' : ''
@@ -36,11 +39,21 @@ function TeamBlock({
       </div>
     </div>
   )
+
+  return slug ? (
+    <Link href={`/team/${slug}`} className="min-w-0 rounded-lg hover:opacity-80">
+      {content}
+    </Link>
+  ) : (
+    content
+  )
 }
 
 export function GameCastHeader({
   away,
   home,
+  awaySlug,
+  homeSlug,
   awayColor,
   homeColor,
   statusDetail,
@@ -51,6 +64,8 @@ export function GameCastHeader({
 }: {
   away: GameTeam
   home: GameTeam
+  awaySlug: string
+  homeSlug: string
   awayColor: string
   homeColor: string
   statusDetail: string
@@ -68,7 +83,7 @@ export function GameCastHeader({
       style={{ background: `linear-gradient(to right, ${from}26, ${to}26)` }}
     >
       <div className="flex items-center justify-between gap-3">
-        <TeamBlock team={away} align="left" />
+        <TeamBlock team={away} slug={awaySlug} align="left" />
         <div className="shrink-0 px-2 text-center text-xs text-[var(--text-muted)]">
           {live && (
             <span className="mb-1 inline-block rounded-full bg-[var(--seq-fill)] px-2 py-0.5 text-[10px] font-semibold text-white">
@@ -77,7 +92,7 @@ export function GameCastHeader({
           )}
           <div>{statusDetail}</div>
         </div>
-        <TeamBlock team={home} align="right" />
+        <TeamBlock team={home} slug={homeSlug} align="right" />
       </div>
 
       {(date || network || venue) && (

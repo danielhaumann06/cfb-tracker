@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { LiveGameStats } from '@/components/LiveGameStats'
 import { TeamTotalsTable } from '@/components/TeamTotalsTable'
@@ -11,6 +12,7 @@ import {
   getGameBoxscore,
   getGameArticle,
   getGameHighlights,
+  getAllTeams,
 } from '@/lib/espn'
 
 // Michigan vs. Western Michigan, Week 1 2026 - the MAC has formally
@@ -40,10 +42,18 @@ export default async function GamePage({
     notFound()
   }
 
+  const allTeams = await getAllTeams()
+  const slugById = new Map(allTeams.map((t) => [t.id, t.slug]))
+  const awaySlug = slugById.get(status.away.id) ?? ''
+  const homeSlug = slugById.get(status.home.id) ?? ''
+
   return (
     <main className="mx-auto w-full min-w-0 max-w-4xl px-4 py-8 sm:px-6">
       <h1 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-2xl font-semibold">
-        <span className="inline-flex items-center gap-1.5">
+        <Link
+          href={awaySlug ? `/team/${awaySlug}` : '#'}
+          className="inline-flex items-center gap-1.5 hover:underline"
+        >
           {status.away.logo && (
             <Image
               src={status.away.logo}
@@ -54,9 +64,12 @@ export default async function GamePage({
             />
           )}
           {status.away.nickname}
-        </span>
+        </Link>
         <span className="text-[var(--text-muted)]">at</span>
-        <span className="inline-flex items-center gap-1.5">
+        <Link
+          href={homeSlug ? `/team/${homeSlug}` : '#'}
+          className="inline-flex items-center gap-1.5 hover:underline"
+        >
           {status.home.logo && (
             <Image
               src={status.home.logo}
@@ -67,7 +80,7 @@ export default async function GamePage({
             />
           )}
           {status.home.nickname}
-        </span>
+        </Link>
       </h1>
 
       {article && (
@@ -88,12 +101,16 @@ export default async function GamePage({
             eventId={eventId}
             initialStatus={status}
             initialBoxscore={boxscore}
+            awaySlug={awaySlug}
+            homeSlug={homeSlug}
           />
         ) : (
           <div className="space-y-6">
             <GameScoreBar
               away={status.away}
               home={status.home}
+              awaySlug={awaySlug}
+              homeSlug={homeSlug}
               statusDetail={status.statusDetail}
               live={false}
               date={status.date}

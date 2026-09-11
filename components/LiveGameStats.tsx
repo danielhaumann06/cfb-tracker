@@ -21,10 +21,14 @@ export function LiveGameStats({
   eventId,
   initialStatus,
   initialBoxscore,
+  awaySlug,
+  homeSlug,
 }: {
   eventId: string
   initialStatus: LiveStatus
   initialBoxscore: GameBoxscore | null
+  awaySlug?: string
+  homeSlug?: string
 }) {
   const [status, setStatus] = useState(initialStatus)
   const [boxscore, setBoxscore] = useState(initialBoxscore)
@@ -53,6 +57,8 @@ export function LiveGameStats({
       <GameScoreBar
         away={status.away}
         home={status.home}
+        awaySlug={awaySlug}
+        homeSlug={homeSlug}
         statusDetail={status.statusDetail}
         live={!status.completed}
         date={status.date}

@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import Link from 'next/link'
 import type { GameTeam } from '@/lib/espn'
 
 function formatKickoff(dateIso: string): string {
@@ -11,8 +12,8 @@ function formatKickoff(dateIso: string): string {
   })
 }
 
-function TeamScore({ team }: { team: GameTeam }) {
-  return (
+function TeamScore({ team, slug }: { team: GameTeam; slug?: string }) {
+  const content = (
     <span className="inline-flex items-center gap-1.5">
       {team.logo && (
         <Image src={team.logo} alt="" width={20} height={20} unoptimized />
@@ -23,11 +24,21 @@ function TeamScore({ team }: { team: GameTeam }) {
       {team.nickname} {team.score}
     </span>
   )
+
+  return slug ? (
+    <Link href={`/team/${slug}`} className="hover:underline">
+      {content}
+    </Link>
+  ) : (
+    content
+  )
 }
 
 export function GameScoreBar({
   away,
   home,
+  awaySlug,
+  homeSlug,
   statusDetail,
   live,
   disputedNote,
@@ -37,6 +48,8 @@ export function GameScoreBar({
 }: {
   away: GameTeam
   home: GameTeam
+  awaySlug?: string
+  homeSlug?: string
   statusDetail: string
   live: boolean
   disputedNote?: string
@@ -53,9 +66,9 @@ export function GameScoreBar({
           </span>
         )}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium">
-          <TeamScore team={away} />
+          <TeamScore team={away} slug={awaySlug} />
           <span className="text-[var(--text-muted)]">&mdash;</span>
-          <TeamScore team={home} />
+          <TeamScore team={home} slug={homeSlug} />
           {disputedNote && <span className="text-[var(--text-muted)]">*</span>}
         </div>
         <span className="text-sm text-[var(--text-muted)]">{statusDetail}</span>

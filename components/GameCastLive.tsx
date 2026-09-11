@@ -34,6 +34,8 @@ export function GameCastLive({
   initialWinProbability,
   homeWheelTeam,
   awayWheelTeam,
+  homeSlug,
+  awaySlug,
 }: {
   eventId: string
   initialStatus: LiveStatus
@@ -42,6 +44,8 @@ export function GameCastLive({
   initialWinProbability: WinProbabilityPoint[]
   homeWheelTeam: WheelTeam
   awayWheelTeam: WheelTeam
+  homeSlug: string
+  awaySlug: string
 }) {
   const [status, setStatus] = useState(initialStatus)
   const [odds, setOdds] = useState(initialOdds)
@@ -77,6 +81,8 @@ export function GameCastLive({
       <GameCastHeader
         away={status.away}
         home={status.home}
+        awaySlug={awaySlug}
+        homeSlug={homeSlug}
         awayColor={awayWheelTeam.color}
         homeColor={homeWheelTeam.color}
         statusDetail={status.statusDetail}
