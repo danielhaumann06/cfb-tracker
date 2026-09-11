@@ -7,6 +7,20 @@ import { GameRow } from './GameRow'
 
 type FilterMode = 'top25' | 'all' | string
 
+function DownChevronIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0">
+      <path
+        d="M5 9l7 7 7-7"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 export function ScoresList({ games }: { games: ScoreboardGame[] }) {
   const [mode, setMode] = useState<FilterMode>('top25')
 
@@ -26,30 +40,13 @@ export function ScoresList({ games }: { games: ScoreboardGame[] }) {
 
   return (
     <div>
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setMode('top25')}
-          className={`rounded-full px-3 py-1.5 text-sm font-medium ${
-            mode === 'top25'
-              ? 'bg-[var(--seq-fill)] text-white'
-              : 'bg-[var(--surface-1)] text-[var(--text-secondary)] border border-[var(--border-hairline)]'
-          }`}
-        >
-          Top 25
-        </button>
+      <div className="relative inline-block">
         <select
-          value={mode === 'top25' ? '' : mode}
-          onChange={(e) => e.target.value && setMode(e.target.value)}
-          className={`rounded-full border px-3 py-1.5 text-sm font-medium ${
-            mode !== 'top25'
-              ? 'border-[var(--seq-fill)] bg-[var(--seq-fill)] text-white'
-              : 'border-[var(--border-hairline)] bg-[var(--surface-1)] text-[var(--text-secondary)]'
-          }`}
+          value={mode}
+          onChange={(e) => setMode(e.target.value)}
+          className="w-full appearance-none rounded-full border border-[var(--border-hairline)] bg-[var(--surface-1)] py-1.5 pl-3 pr-9 text-sm font-medium text-[var(--text-secondary)]"
         >
-          <option value="" disabled>
-            FBS / conference…
-          </option>
+          <option value="top25">Top 25</option>
           <option value="all">All FBS</option>
           {[...FBS_CONFERENCES]
             .sort((a, b) => a.name.localeCompare(b.name))
@@ -59,6 +56,9 @@ export function ScoresList({ games }: { games: ScoreboardGame[] }) {
               </option>
             ))}
         </select>
+        <span className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-[var(--text-muted)]">
+          <DownChevronIcon />
+        </span>
       </div>
 
       <div className="mt-4 space-y-3">
