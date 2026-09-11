@@ -47,8 +47,23 @@ export function WinProbabilityWheel({
   const awayLength = awayFraction * CIRCUMFERENCE
   const homeLength = homeFraction * CIRCUMFERENCE
 
+  const awayHex = `#${away.color || '9aa5a0'}`
+  const homeHex = `#${home.color || '9aa5a0'}`
+  // Shade the favored team's side of the card, fading toward the other side.
+  // A true toss-up shades both, meeting in the middle like the Game Cast
+  // header's two-team gradient.
+  const favoredBackground =
+    awayPct === homePct
+      ? `linear-gradient(to right, ${awayHex}26, ${homeHex}26)`
+      : awayPct > homePct
+        ? `linear-gradient(to right, ${awayHex}26, transparent 60%)`
+        : `linear-gradient(to left, ${homeHex}26, transparent 60%)`
+
   return (
-    <section className="rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-5 shadow-[var(--shadow-card)]">
+    <section
+      className="rounded-xl border border-[var(--border-hairline)] p-5 shadow-[var(--shadow-card)]"
+      style={{ background: `${favoredBackground}, var(--surface-1)` }}
+    >
       <h2 className="font-semibold">Matchup Predictor</h2>
       <div className="mt-4 flex items-center justify-center gap-4 sm:gap-8">
         <TeamPct team={away} pct={awayPct} align="right" />
