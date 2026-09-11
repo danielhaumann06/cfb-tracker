@@ -8,7 +8,7 @@ import type {
   GameTeam,
   WinProbabilityPoint,
 } from '@/lib/espn'
-import { GameScoreBar } from './GameScoreBar'
+import { GameCastHeader } from './GameCastHeader'
 import { GameOddsPanel } from './GameOddsPanel'
 import { WinProbabilityWheel, type WheelTeam } from './WinProbabilityWheel'
 import { WinProbabilityChart } from './WinProbabilityChart'
@@ -74,9 +74,11 @@ export function GameCastLive({
 
   return (
     <div className="space-y-6">
-      <GameScoreBar
+      <GameCastHeader
         away={status.away}
         home={status.home}
+        awayColor={awayWheelTeam.color}
+        homeColor={homeWheelTeam.color}
         statusDetail={status.statusDetail}
         live={status.state === 'in'}
         date={status.date}

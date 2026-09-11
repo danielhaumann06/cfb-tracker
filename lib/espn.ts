@@ -1272,7 +1272,7 @@ export interface StatLeaderCategory {
   leaders: StatLeader[]
 }
 
-const STAT_LEADER_CATEGORIES: {
+export const STAT_LEADER_CATEGORIES: {
   key: string
   label: string
   group: StatLeaderGroup
