@@ -85,7 +85,10 @@ export function ScheduleTable({
                       )}
                     </Link>
                   ) : (
-                    <span className="text-[var(--text-muted)]">
+                    <Link
+                      href={`/scores/${game.id}`}
+                      className="text-[var(--text-muted)] underline decoration-[var(--border-hairline)] underline-offset-2 hover:decoration-current"
+                    >
                       {game.statusDetail}
                       {oddsByGameId[game.id]?.details && (
                         <>
@@ -95,7 +98,7 @@ export function ScheduleTable({
                           </span>
                         </>
                       )}
-                    </span>
+                    </Link>
                   )}
                 </td>
               </tr>

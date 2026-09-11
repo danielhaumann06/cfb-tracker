@@ -212,47 +212,38 @@ export async function getLivePowerFiveGames(): Promise<LiveTickerGame[]> {
 // Used to fill the dashboard's Live Ticker when nothing is currently live -
 // each currently-ranked team's most recently completed game, so it reads
 // as a scoreboard recap rather than going blank between game windows.
+// Previously this picked each ranked team's most recent COMPLETED game from
+// their full season schedule - which meant that as soon as this week's
+// slate kicked off, the ticker kept showing last week's final scores for
+// every ranked team until each one's own game individually finished,
+// instead of reflecting the week actually in progress. Sourcing from the
+// current week's scoreboard directly (the same data the Scores tab's Top 25
+// filter uses) shows this week's ranked games as soon as they exist -
+// upcoming, live, or final - not just the last ones that finished.
 export async function getTop25Scores(): Promise<LiveTickerGame[]> {
-  const { teams } = await getNationalRankings()
-  if (teams.length === 0) return []
-
-  const rankById = new Map(teams.map((t) => [t.id, t.rank]))
-  const schedules = await Promise.all(
-    teams.map((t) => getTeamSchedule(t.id).catch(() => [] as GameSummary[]))
-  )
-
-  const seen = new Set<string>()
-  const games: LiveTickerGame[] = []
-
-  for (const schedule of schedules) {
-    const completed = schedule
-      .filter((g) => g.state === 'post')
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    const game = completed[0]
-    if (!game || seen.has(game.id)) continue
-    seen.add(game.id)
-
-    games.push({
-      id: game.id,
-      statusDetail: game.statusDetail,
-      home: {
-        name: game.home.abbreviation,
-        abbreviation: game.home.abbreviation,
-        logo: game.home.logo,
-        score: game.home.score,
-        rank: rankById.get(game.home.id) ?? null,
-      },
-      away: {
-        name: game.away.abbreviation,
-        abbreviation: game.away.abbreviation,
-        logo: game.away.logo,
-        score: game.away.score,
-        rank: rankById.get(game.away.id) ?? null,
-      },
-    })
-  }
+  const { games } = await getWeekScoreboard()
 
   return games
+    .filter((g) => g.home.rank != null || g.away.rank != null)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .map((g) => ({
+      id: g.id,
+      statusDetail: g.statusDetail,
+      home: {
+        name: g.home.abbreviation,
+        abbreviation: g.home.abbreviation,
+        logo: g.home.logo,
+        score: g.home.score,
+        rank: g.home.rank,
+      },
+      away: {
+        name: g.away.abbreviation,
+        abbreviation: g.away.abbreviation,
+        logo: g.away.logo,
+        score: g.away.score,
+        rank: g.away.rank,
+      },
+    }))
 }
 
 export interface ConferenceGame {
@@ -420,6 +411,7 @@ export interface ScoreboardGame {
 
 export interface ScoreboardWeek {
   weekNumber: number
+  weeks: ConferenceWeekOption[]
   games: ScoreboardGame[]
 }
 
@@ -448,13 +440,21 @@ const ALL_FBS_CONFERENCE_GROUPS = [
 // competitor already carries curatedRank (AP rank, 99 = unranked) and
 // conferenceId, so Top 25 / All FBS / by-conference are all just filters
 // over this one merged fetch, not separate per-filter requests.
-export async function getWeekScoreboard(): Promise<ScoreboardWeek> {
+export async function getWeekScoreboard(week?: number): Promise<ScoreboardWeek> {
+  const params = new URLSearchParams()
+  if (week != null) {
+    params.set('week', String(week))
+    params.set('seasontype', '2')
+  }
+  const query = params.toString()
+
   const [responses, allTeams] = await Promise.all([
     Promise.all(
       ALL_FBS_CONFERENCE_GROUPS.map((groupId) =>
-        fetch(`${SITE_BASE}/scoreboard?groups=${groupId}`, {
-          next: { revalidate: 30 },
-        })
+        fetch(
+          `${SITE_BASE}/scoreboard?groups=${groupId}${query ? `&${query}` : ''}`,
+          { next: { revalidate: 30 } }
+        )
           .then((r) => (r.ok ? r.json() : null))
           .catch(() => null)
       )
@@ -464,10 +464,22 @@ export async function getWeekScoreboard(): Promise<ScoreboardWeek> {
   const teamById = new Map(allTeams.map((t) => [t.id, t]))
 
   const eventById = new Map<string, any>()
-  let weekNumber = 1
+  let weekNumber = week ?? 1
+  let weeks: ConferenceWeekOption[] = []
   for (const data of responses) {
     if (!data) continue
     weekNumber = data.week?.number ?? weekNumber
+    if (weeks.length === 0) {
+      // Every conference's response carries the same full-season calendar -
+      // grab it from whichever response happens to come back first.
+      const regularSeason = (data.leagues?.[0]?.calendar ?? []).find(
+        (c: any) => c.value === '2'
+      )
+      weeks = (regularSeason?.entries ?? []).map((e: any) => ({
+        week: Number(e.value),
+        label: e.label,
+      }))
+    }
     for (const event of data.events ?? []) {
       eventById.set(event.id, event)
     }
@@ -517,6 +529,7 @@ export async function getWeekScoreboard(): Promise<ScoreboardWeek> {
 
   return {
     weekNumber,
+    weeks,
     games,
   }
 }
