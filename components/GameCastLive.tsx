@@ -19,6 +19,9 @@ interface LiveStatus {
   state: GameState
   completed: boolean
   statusDetail: string
+  date: string
+  network: string | null
+  venue: string | null
 }
 
 const FIVE_MINUTES_MS = 5 * 60 * 1000
@@ -76,6 +79,9 @@ export function GameCastLive({
         home={status.home}
         statusDetail={status.statusDetail}
         live={status.state === 'in'}
+        date={status.date}
+        network={status.network}
+        venue={status.venue}
       />
 
       <GameOddsPanel odds={odds} />

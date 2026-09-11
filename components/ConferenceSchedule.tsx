@@ -58,20 +58,14 @@ function ScheduleRow({ game }: { game: ScheduleGame }) {
         <TeamLink team={game.home} />
       </div>
       <div className="shrink-0 text-right text-xs text-[var(--text-muted)]">
-        {game.state === 'pre' ? (
-          formatKickoff(game.date)
-        ) : (
-          <>
+        <div>{formatKickoff(game.date)}</div>
+        {game.state !== 'pre' && (
+          <div>
             {game.away.score ?? 0}-{game.home.score ?? 0} &middot;{' '}
             {game.statusDetail}
-          </>
+          </div>
         )}
-        {game.network && (
-          <>
-            <br />
-            {game.network}
-          </>
-        )}
+        {game.network && <div>{game.network}</div>}
       </div>
     </li>
   )

@@ -1,6 +1,16 @@
 import Image from 'next/image'
 import type { GameTeam } from '@/lib/espn'
 
+function formatKickoff(dateIso: string): string {
+  return new Date(dateIso).toLocaleString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
 function TeamScore({ team }: { team: GameTeam }) {
   return (
     <span className="inline-flex items-center gap-1.5">
@@ -21,12 +31,18 @@ export function GameScoreBar({
   statusDetail,
   live,
   disputedNote,
+  date,
+  network,
+  venue,
 }: {
   away: GameTeam
   home: GameTeam
   statusDetail: string
   live: boolean
   disputedNote?: string
+  date?: string
+  network?: string | null
+  venue?: string | null
 }) {
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-4 shadow-[var(--shadow-card)]">
@@ -44,6 +60,13 @@ export function GameScoreBar({
         </div>
         <span className="text-sm text-[var(--text-muted)]">{statusDetail}</span>
       </div>
+      {(date || network || venue) && (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--text-muted)]">
+          {date && <span>{formatKickoff(date)}</span>}
+          {network && <span>&middot; {network}</span>}
+          {venue && <span>&middot; {venue}</span>}
+        </div>
+      )}
       {disputedNote && (
         <p className="text-xs text-[var(--text-muted)]">* {disputedNote}</p>
       )}

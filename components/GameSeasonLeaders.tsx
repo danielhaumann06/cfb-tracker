@@ -16,29 +16,31 @@ function LeaderRow({ category }: { category: StatLeaderCategory }) {
   if (!leader) return null
 
   return (
-    <li className="flex items-center gap-3 px-4 py-2.5">
+    <li className="flex items-center gap-2 px-2 py-2 sm:gap-3 sm:px-4">
       {leader.headshot ? (
         <Image
           src={leader.headshot}
           alt=""
-          width={32}
-          height={32}
+          width={28}
+          height={28}
           unoptimized
-          className="h-8 w-8 shrink-0 rounded-full bg-[var(--background)] object-cover"
+          className="h-7 w-7 shrink-0 rounded-full bg-[var(--background)] object-cover"
         />
       ) : (
-        <div className="h-8 w-8 shrink-0 rounded-full bg-[var(--background)]" />
+        <div className="h-7 w-7 shrink-0 rounded-full bg-[var(--background)]" />
       )}
       <div className="min-w-0 flex-1">
         <Link
           href={`/player/${leader.playerId}`}
-          className="block truncate text-sm font-medium hover:underline"
+          className="block truncate text-xs font-medium hover:underline sm:text-sm"
         >
           {leader.playerName || 'Unknown'}
         </Link>
-        <div className="text-xs text-[var(--text-muted)]">{category.displayName}</div>
+        <div className="truncate text-[10px] text-[var(--text-muted)] sm:text-xs">
+          {category.displayName}
+        </div>
       </div>
-      <span className="shrink-0 text-sm font-semibold">{leader.value}</span>
+      <span className="shrink-0 text-xs font-semibold sm:text-sm">{leader.value}</span>
     </li>
   )
 }
@@ -50,25 +52,27 @@ function TeamPanel({ team }: { team: TeamLeadersPanel }) {
     <div className="min-w-0">
       <Link
         href={`/team/${team.slug}`}
-        className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-[var(--background)]"
+        className="flex items-center gap-2 rounded-lg px-1 py-1 hover:bg-[var(--background)]"
       >
         {team.logo && (
-          <Image src={team.logo} alt="" width={36} height={36} unoptimized className="shrink-0" />
+          <Image src={team.logo} alt="" width={28} height={28} unoptimized className="shrink-0" />
         )}
         <div className="min-w-0">
-          <div className="truncate font-medium">{team.name}</div>
-          <div className="text-sm text-[var(--text-muted)]">{team.record}</div>
+          <div className="truncate text-sm font-medium sm:text-base">{team.name}</div>
+          <div className="text-xs text-[var(--text-muted)] sm:text-sm">{team.record}</div>
         </div>
       </Link>
 
       {categoriesWithLeaders.length > 0 ? (
-        <ul className="mt-3 divide-y divide-[var(--gridline)] overflow-hidden rounded-lg border border-[var(--border-hairline)]">
+        <ul className="mt-2 divide-y divide-[var(--gridline)] overflow-hidden rounded-lg border border-[var(--border-hairline)] sm:mt-3">
           {categoriesWithLeaders.map((category) => (
             <LeaderRow key={category.name} category={category} />
           ))}
         </ul>
       ) : (
-        <p className="mt-3 text-sm text-[var(--text-muted)]">No stat leaders available yet.</p>
+        <p className="mt-2 text-xs text-[var(--text-muted)] sm:mt-3 sm:text-sm">
+          No stat leaders available yet.
+        </p>
       )}
     </div>
   )
@@ -84,7 +88,7 @@ export function GameSeasonLeaders({
   return (
     <section className="rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-5 shadow-[var(--shadow-card)]">
       <h2 className="font-semibold">Season Leaders</h2>
-      <div className="mt-4 grid gap-6 sm:grid-cols-2">
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-6">
         <TeamPanel team={away} />
         <TeamPanel team={home} />
       </div>

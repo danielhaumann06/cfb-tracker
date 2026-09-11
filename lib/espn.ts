@@ -704,6 +704,9 @@ export async function getGameLiveStatus(eventId: string): Promise<{
   state: GameState
   completed: boolean
   statusDetail: string
+  date: string
+  network: string | null
+  venue: string | null
 }> {
   const res = await fetch(`${SITE_BASE}/summary?event=${eventId}`, {
     next: { revalidate: 30 },
@@ -717,6 +720,9 @@ export async function getGameLiveStatus(eventId: string): Promise<{
     home: mapCompetitor(home),
     away: mapCompetitor(away),
     ...parseStatus(competition.status),
+    date: competition.date,
+    network: competition.broadcasts?.[0]?.media?.shortName ?? null,
+    venue: data.gameInfo?.venue?.fullName ?? null,
   }
 }
 

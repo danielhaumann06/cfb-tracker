@@ -5,6 +5,8 @@ import type { ScoreboardGame, ScoreboardTeam } from '@/lib/espn'
 function formatKickoff(dateIso: string): string {
   return new Date(dateIso).toLocaleString('en-US', {
     weekday: 'short',
+    month: 'short',
+    day: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
   })
@@ -37,7 +39,8 @@ export function GameRow({ game }: { game: ScoreboardGame }) {
       <TeamLine team={game.away} />
       <TeamLine team={game.home} />
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--text-muted)]">
-        <span>{game.state === 'pre' ? formatKickoff(game.date) : game.statusDetail}</span>
+        <span>{formatKickoff(game.date)}</span>
+        {game.state !== 'pre' && <span>&middot; {game.statusDetail}</span>}
         {game.network && <span>&middot; {game.network}</span>}
         {game.venue && <span>&middot; {game.venue}</span>}
       </div>

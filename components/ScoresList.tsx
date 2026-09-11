@@ -26,7 +26,7 @@ export function ScoresList({ games }: { games: ScoreboardGame[] }) {
 
   return (
     <div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={() => setMode('top25')}
@@ -38,25 +38,19 @@ export function ScoresList({ games }: { games: ScoreboardGame[] }) {
         >
           Top 25
         </button>
-        <button
-          type="button"
-          onClick={() => setMode('all')}
-          className={`rounded-full px-3 py-1.5 text-sm font-medium ${
-            mode === 'all'
-              ? 'bg-[var(--seq-fill)] text-white'
-              : 'bg-[var(--surface-1)] text-[var(--text-secondary)] border border-[var(--border-hairline)]'
+        <select
+          value={mode === 'top25' ? '' : mode}
+          onChange={(e) => e.target.value && setMode(e.target.value)}
+          className={`rounded-full border px-3 py-1.5 text-sm font-medium ${
+            mode !== 'top25'
+              ? 'border-[var(--seq-fill)] bg-[var(--seq-fill)] text-white'
+              : 'border-[var(--border-hairline)] bg-[var(--surface-1)] text-[var(--text-secondary)]'
           }`}
         >
-          All FBS
-        </button>
-        <select
-          value={FBS_CONFERENCES.some((c) => c.groupId === mode) ? mode : ''}
-          onChange={(e) => e.target.value && setMode(e.target.value)}
-          className="rounded-full border border-[var(--border-hairline)] bg-[var(--surface-1)] px-3 py-1.5 text-sm font-medium text-[var(--text-secondary)]"
-        >
           <option value="" disabled>
-            Conference…
+            FBS / conference…
           </option>
+          <option value="all">All FBS</option>
           {[...FBS_CONFERENCES]
             .sort((a, b) => a.name.localeCompare(b.name))
             .map((conf) => (

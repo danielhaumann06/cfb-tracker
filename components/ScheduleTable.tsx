@@ -7,9 +7,11 @@ import type { GameOdds, GameSummary } from '@/lib/espn'
 const DISPUTED_GAME_ID = '401858428'
 
 function formatDate(dateIso: string): string {
-  return new Date(dateIso).toLocaleDateString('en-US', {
+  return new Date(dateIso).toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
   })
 }
 
@@ -54,7 +56,14 @@ export function ScheduleTable({
                 <td className="px-4 py-2 text-[var(--text-muted)]">
                   {game.week ?? '—'}
                 </td>
-                <td className="px-4 py-2">{formatDate(game.date)}</td>
+                <td className="px-4 py-2">
+                  <div>{formatDate(game.date)}</div>
+                  {game.network && (
+                    <div className="text-xs text-[var(--text-muted)]">
+                      {game.network}
+                    </div>
+                  )}
+                </td>
                 <td className="px-4 py-2">
                   {isHome ? 'vs' : 'at'}{' '}
                   {opponent.rank != null && `#${opponent.rank} `}
@@ -78,7 +87,6 @@ export function ScheduleTable({
                   ) : (
                     <span className="text-[var(--text-muted)]">
                       {game.statusDetail}
-                      {game.network && ` · ${game.network}`}
                       {oddsByGameId[game.id]?.details && (
                         <>
                           <br />

@@ -12,6 +12,9 @@ interface LiveStatus {
   state: GameState
   completed: boolean
   statusDetail: string
+  date?: string
+  network?: string | null
+  venue?: string | null
 }
 
 export function LiveGameStats({
@@ -52,6 +55,9 @@ export function LiveGameStats({
         home={status.home}
         statusDetail={status.statusDetail}
         live={!status.completed}
+        date={status.date}
+        network={status.network}
+        venue={status.venue}
       />
 
       {boxscore ? (

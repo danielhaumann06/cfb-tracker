@@ -96,6 +96,9 @@ export default async function GamePage({
               home={status.home}
               statusDetail={status.statusDetail}
               live={false}
+              date={status.date}
+              network={status.network}
+              venue={status.venue}
               disputedNote={
                 eventId === DISPUTED_GAME_ID
                   ? 'The MAC has formally appealed this result to the NCAA/CFP, seeking to have Western Michigan recognized as the winner.'

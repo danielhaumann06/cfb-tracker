@@ -10,17 +10,24 @@ const RADIUS = 40
 const STROKE = 14
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
-// Standard SVG circle stroke-dasharray trick: a circle's dash naturally
-// starts at 3 o'clock and sweeps clockwise as offset grows, so everything
-// here is rotated -90deg around the center to start at 12 o'clock instead -
-// applied consistently to both the arcs and the logo placement math below.
-function pointOnRing(fractionOffset: number): { x: number; y: number } {
-  const angleDeg = -90 + fractionOffset * 360
-  const angleRad = (angleDeg * Math.PI) / 180
-  return {
-    x: 50 + RADIUS * Math.cos(angleRad),
-    y: 50 + RADIUS * Math.sin(angleRad),
-  }
+function TeamPct({
+  team,
+  pct,
+  align,
+}: {
+  team: WheelTeam
+  pct: number
+  align: 'left' | 'right'
+}) {
+  return (
+    <div className={`flex items-center gap-2 ${align === 'right' ? 'flex-row-reverse text-right' : ''}`}>
+      {team.logo && <Image src={team.logo} alt="" width={32} height={32} unoptimized className="shrink-0" />}
+      <div>
+        <div className="text-lg font-semibold">{Math.round(pct)}%</div>
+        <div className="text-xs text-[var(--text-muted)]">{team.abbreviation}</div>
+      </div>
+    </div>
+  )
 }
 
 export function WinProbabilityWheel({
@@ -40,14 +47,12 @@ export function WinProbabilityWheel({
   const awayLength = awayFraction * CIRCUMFERENCE
   const homeLength = homeFraction * CIRCUMFERENCE
 
-  const awayLogoPos = pointOnRing(awayFraction / 2)
-  const homeLogoPos = pointOnRing(awayFraction + homeFraction / 2)
-
   return (
     <section className="rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-5 shadow-[var(--shadow-card)]">
       <h2 className="font-semibold">Matchup Predictor</h2>
-      <div className="relative mx-auto mt-4 aspect-square w-full max-w-[220px]">
-        <svg viewBox="0 0 100 100" className="h-full w-full">
+      <div className="mt-4 flex items-center justify-center gap-4 sm:gap-8">
+        <TeamPct team={away} pct={awayPct} align="right" />
+        <svg viewBox="0 0 100 100" className="h-24 w-24 shrink-0">
           <circle
             cx={50}
             cy={50}
@@ -56,6 +61,10 @@ export function WinProbabilityWheel({
             stroke="var(--gridline)"
             strokeWidth={STROKE}
           />
+          {/* Standard SVG circle stroke-dasharray trick: a circle's dash
+              naturally starts at 3 o'clock and sweeps clockwise as offset
+              grows, so both arcs are rotated -90deg to start at 12 o'clock
+              instead. */}
           {awayLength > 0 && (
             <circle
               cx={50}
@@ -83,28 +92,8 @@ export function WinProbabilityWheel({
             />
           )}
         </svg>
-        {awayPct > 0 && (
-          <div
-            className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5"
-            style={{ left: `${awayLogoPos.x}%`, top: `${awayLogoPos.y}%` }}
-          >
-            {away.logo && <Image src={away.logo} alt="" width={28} height={28} unoptimized />}
-            <span className="text-xs font-semibold">{Math.round(awayPct)}%</span>
-          </div>
-        )}
-        {homePct > 0 && (
-          <div
-            className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5"
-            style={{ left: `${homeLogoPos.x}%`, top: `${homeLogoPos.y}%` }}
-          >
-            {home.logo && <Image src={home.logo} alt="" width={28} height={28} unoptimized />}
-            <span className="text-xs font-semibold">{Math.round(homePct)}%</span>
-          </div>
-        )}
+        <TeamPct team={home} pct={homePct} align="left" />
       </div>
-      <p className="mt-3 text-center text-sm text-[var(--text-muted)]">
-        {away.abbreviation} vs {home.abbreviation}
-      </p>
     </section>
   )
 }

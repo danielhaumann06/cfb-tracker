@@ -85,6 +85,12 @@ export function TeamCard({
                   : next.statusDetail}
               </dd>
             </div>
+            {next.network && (
+              <div className="flex justify-between gap-2">
+                <dt className="text-[var(--text-muted)]">Network</dt>
+                <dd className="text-right">{next.network}</dd>
+              </div>
+            )}
             {next.state === 'in' && self && opponent && (
               <div className="flex justify-between gap-2">
                 <dt className="text-[var(--text-muted)]">Score</dt>
