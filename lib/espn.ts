@@ -59,6 +59,9 @@ export interface GameOdds {
   details: string | null
   spread: number | null
   overUnder: number | null
+  homeMoneyLine: number | null
+  awayMoneyLine: number | null
+  provider: string | null
 }
 
 export interface FpiSummary {
@@ -390,6 +393,134 @@ export async function getConferenceSchedule(
   }
 }
 
+export interface ScoreboardTeam {
+  id: string
+  name: string
+  abbreviation: string
+  logo: string
+  color: string
+  slug: string
+  score: string | null
+  rank: number | null
+  record: string | null
+  conferenceId: string | null
+}
+
+export interface ScoreboardGame {
+  id: string
+  date: string
+  venue: string | null
+  network: string | null
+  home: ScoreboardTeam
+  away: ScoreboardTeam
+  state: GameState
+  completed: boolean
+  statusDetail: string
+}
+
+export interface ScoreboardWeek {
+  weekNumber: number
+  games: ScoreboardGame[]
+}
+
+// Same 11 groupIds as lib/conferences.ts's FBS_CONFERENCES (kept as a local
+// literal here rather than importing across lib/ files, same as
+// POWER_FIVE_GROUPS above).
+const ALL_FBS_CONFERENCE_GROUPS = [
+  '1',
+  '151',
+  '4',
+  '5',
+  '12',
+  '18',
+  '15',
+  '17',
+  '9',
+  '8',
+  '37',
+]
+
+// A single groups=80 ("all FBS") request comes back well over 2MB, which
+// Next's fetch cache silently refuses to store (same ceiling getAllTeams's
+// pagination above works around) - fetching per-conference instead keeps
+// each request small. Cross-conference games appear in both participating
+// conferences' responses, so results are deduped by event id below. Each
+// competitor already carries curatedRank (AP rank, 99 = unranked) and
+// conferenceId, so Top 25 / All FBS / by-conference are all just filters
+// over this one merged fetch, not separate per-filter requests.
+export async function getWeekScoreboard(): Promise<ScoreboardWeek> {
+  const [responses, allTeams] = await Promise.all([
+    Promise.all(
+      ALL_FBS_CONFERENCE_GROUPS.map((groupId) =>
+        fetch(`${SITE_BASE}/scoreboard?groups=${groupId}`, {
+          next: { revalidate: 30 },
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .catch(() => null)
+      )
+    ),
+    getAllTeams(),
+  ])
+  const teamById = new Map(allTeams.map((t) => [t.id, t]))
+
+  const eventById = new Map<string, any>()
+  let weekNumber = 1
+  for (const data of responses) {
+    if (!data) continue
+    weekNumber = data.week?.number ?? weekNumber
+    for (const event of data.events ?? []) {
+      eventById.set(event.id, event)
+    }
+  }
+
+  const mapScoreboardTeam = (competitor: any): ScoreboardTeam => {
+    const curatedRank = competitor.curatedRank?.current
+    const team = teamById.get(competitor.team.id)
+    return {
+      id: competitor.team.id,
+      name: competitor.team.shortDisplayName ?? competitor.team.displayName,
+      abbreviation: competitor.team.abbreviation,
+      logo: team?.logo ?? pickDefaultLogo(competitor.team.logos),
+      color: team?.color ?? competitor.team.color ?? '',
+      slug: team?.slug ?? '',
+      score: competitor.score ?? null,
+      rank: curatedRank != null && curatedRank < 99 ? curatedRank : null,
+      record:
+        competitor.records?.find((r: any) => r.type === 'total')?.summary ??
+        null,
+      conferenceId:
+        competitor.team.conferenceId != null
+          ? String(competitor.team.conferenceId)
+          : null,
+    }
+  }
+
+  const games: ScoreboardGame[] = [...eventById.values()].map((event: any) => {
+    const competition = event.competitions[0]
+    const home = competition.competitors.find(
+      (c: any) => c.homeAway === 'home'
+    )
+    const away = competition.competitors.find(
+      (c: any) => c.homeAway === 'away'
+    )
+
+    return {
+      id: event.id,
+      date: event.date,
+      venue: competition.venue?.fullName ?? null,
+      network: competition.broadcasts?.[0]?.names?.[0] ?? null,
+      home: mapScoreboardTeam(home),
+      away: mapScoreboardTeam(away),
+      ...parseStatus(competition.status),
+    }
+  })
+
+  return {
+    weekNumber,
+    games,
+  }
+}
+
 export interface TeamListEntry {
   id: string
   name: string
@@ -510,7 +641,61 @@ export async function getGameOdds(eventId: string): Promise<GameOdds | null> {
     details: pick.details ?? null,
     spread: pick.spread ?? null,
     overUnder: pick.overUnder ?? null,
+    homeMoneyLine: pick.homeTeamOdds?.moneyLine ?? null,
+    awayMoneyLine: pick.awayTeamOdds?.moneyLine ?? null,
+    provider: pick.provider?.name ?? null,
   }
+}
+
+export interface GamePredictor {
+  homeTeamId: string
+  awayTeamId: string
+  homeWinPct: number
+  awayWinPct: number
+}
+
+export async function getGamePredictor(
+  eventId: string
+): Promise<GamePredictor | null> {
+  const res = await fetch(`${SITE_BASE}/summary?event=${eventId}`, {
+    next: { revalidate: 30 },
+  })
+  const data = await res.json()
+  const predictor = data.predictor
+  if (!predictor?.homeTeam || !predictor?.awayTeam) return null
+
+  const homeWinPct = Number(predictor.homeTeam.gameProjection)
+  const awayWinPct = Number(predictor.awayTeam.gameProjection)
+  if (!Number.isFinite(homeWinPct) || !Number.isFinite(awayWinPct)) return null
+
+  return {
+    homeTeamId: predictor.homeTeam.id,
+    awayTeamId: predictor.awayTeam.id,
+    homeWinPct,
+    awayWinPct,
+  }
+}
+
+export interface WinProbabilityPoint {
+  playId: string
+  homeWinPct: number
+}
+
+// ESPN recomputes this after every play once a game has kicked off - an
+// empty array just means the game hasn't started yet, not an error.
+export async function getGameWinProbabilityHistory(
+  eventId: string
+): Promise<WinProbabilityPoint[]> {
+  const res = await fetch(`${SITE_BASE}/summary?event=${eventId}`, {
+    next: { revalidate: 30 },
+  })
+  const data = await res.json()
+  const points = data.winprobability ?? []
+
+  return (points as any[]).map((p) => ({
+    playId: String(p.playId),
+    homeWinPct: Math.round((p.homeWinPercentage ?? 0) * 1000) / 10,
+  }))
 }
 
 export async function getGameLiveStatus(eventId: string): Promise<{
@@ -1263,6 +1448,60 @@ export async function getConferenceStatLeaders(
 ): Promise<StatLeaderCategory[]> {
   const { teams } = await getConferenceStandings(groupId)
   return getStatLeadersForTeams(new Set(teams.map((t) => t.id)))
+}
+
+// Unlike getStatLeadersForTeams (which filters a national top-300 pool down
+// to a set of teams, so a team's own leader can be missing entirely if they
+// don't crack that pool), this hits ESPN's per-team leaders endpoint
+// directly - every category always reflects this specific team's actual
+// leader, regardless of national ranking. Each category comes back with at
+// most one leader (this team's #1), not a top-5 list.
+export async function getTeamStatLeaders(
+  teamId: string
+): Promise<StatLeaderCategory[]> {
+  const season = currentSeasonYear()
+  const res = await fetch(
+    `${CORE_BASE}/seasons/${season}/types/2/teams/${teamId}/leaders`,
+    { next: { revalidate: 30 } }
+  )
+  if (!res.ok) return []
+  const data = await res.json()
+  const categories: any[] = data.categories ?? []
+
+  const resolved = await Promise.all(
+    STAT_LEADER_CATEGORIES.map(async (wanted) => {
+      const category = categories.find((c: any) => c.name === wanted.key)
+      const top = category?.leaders?.[0]
+      const athleteId = idFromRef(top?.athlete?.$ref)
+      if (!athleteId) return null
+
+      const [player, freshValue] = await Promise.all([
+        resolvePlayerBasics(athleteId),
+        getAthleteCurrentSeasonStatValue(athleteId, wanted.key).catch(
+          () => null
+        ),
+      ])
+
+      const leader: StatLeader = {
+        playerId: athleteId,
+        playerName: player?.name ?? '',
+        headshot: player?.headshot ?? '',
+        teamAbbreviation: '',
+        teamLogo: '',
+        teamSlug: '',
+        value: freshValue ?? (top?.displayValue as string) ?? '',
+      }
+
+      return {
+        name: wanted.key,
+        displayName: wanted.label,
+        group: wanted.group,
+        leaders: [leader],
+      }
+    })
+  )
+
+  return resolved.filter((c): c is StatLeaderCategory => c !== null)
 }
 
 export interface TeamBoxscore {
