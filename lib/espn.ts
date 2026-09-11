@@ -1111,6 +1111,63 @@ async function resolvePlayerBasics(
   }
 }
 
+// Maps a stat-leader category key to where that same stat lives in a
+// player's own stats page (ATHLETE_STATS_BASE), so we can re-fetch just
+// that value from a source ESPN refreshes far more often (see the comment
+// on getAthleteCurrentSeasonStatValue below).
+const ATHLETE_STAT_LOOKUP: Record<string, { category: string; field: string }> = {
+  passingYards: { category: 'passing', field: 'passingYards' },
+  rushingYards: { category: 'rushing', field: 'rushingYards' },
+  receivingYards: { category: 'receiving', field: 'receivingYards' },
+  sacks: { category: 'defensive', field: 'sacks' },
+  totalTackles: { category: 'defensive', field: 'totalTackles' },
+  interceptions: { category: 'defensive', field: 'interceptions' },
+}
+
+// getLeaderPool's national leaderboard is cached by ESPN's own CDN for up
+// to 15 minutes (stale-while-revalidate up to 2 hours on top of that) -
+// no amount of polling on our end makes it faster, which is why a team's
+// leaders can look frozen mid-game. A player's own stats page is cached
+// by ESPN for only 5 minutes, so once getLeaderPool has told us *who* the
+// top players are, we re-fetch each one's current number from here for
+// a materially fresher displayed value.
+//
+// Gotcha found while wiring this up: that page's `totals` field is a
+// CAREER total across every season the player has stats for, not this
+// season alone (e.g. it silently added a player's 2025 and 2026 tackle
+// counts together). We have to pick out the entry for the current season
+// specifically, not just grab `totals`.
+async function getAthleteCurrentSeasonStatValue(
+  playerId: string,
+  categoryKey: string
+): Promise<string | null> {
+  const lookup = ATHLETE_STAT_LOOKUP[categoryKey]
+  if (!lookup) return null
+
+  const res = await fetch(`${ATHLETE_STATS_BASE}/${playerId}/stats`, {
+    next: { revalidate: 30 },
+  })
+  if (!res.ok) return null
+  const data = await res.json()
+  const category = (data.categories ?? []).find(
+    (c: any) => c.name === lookup.category
+  )
+  if (!category) return null
+
+  const fieldIndex = category.names?.indexOf(lookup.field) ?? -1
+  if (fieldIndex < 0) return null
+
+  const season = currentSeasonYear()
+  const seasonStint = (category.statistics ?? []).find(
+    (s: any) => s.season?.year === season
+  )
+  const raw = seasonStint?.stats?.[fieldIndex]
+  if (raw === undefined) return null
+
+  const numeric = Number(String(raw).replace(/,/g, ''))
+  return Number.isFinite(numeric) ? numeric.toLocaleString() : String(raw)
+}
+
 // ESPN's season leaders endpoint spans all of college football (FBS and
 // below), with no way to ask it to scope to a conference - so both the
 // Power Five card and each per-conference card pull from this same
@@ -1146,9 +1203,16 @@ async function resolveCategoryLeaders(
     .filter((c: any) => c.athleteId && teamIds.has(c.teamId))
     .slice(0, 5)
 
-  const resolvedPlayers = await Promise.all(
-    candidates.map((c: any) => resolvePlayerBasics(c.athleteId))
-  )
+  const [resolvedPlayers, freshValues] = await Promise.all([
+    Promise.all(candidates.map((c: any) => resolvePlayerBasics(c.athleteId))),
+    Promise.all(
+      candidates.map((c: any) =>
+        getAthleteCurrentSeasonStatValue(c.athleteId, category.name).catch(
+          () => null
+        )
+      )
+    ),
+  ])
 
   return candidates.map((c: any, i: number) => {
     const team = teamById.get(c.teamId)
@@ -1160,7 +1224,7 @@ async function resolveCategoryLeaders(
       teamAbbreviation: team?.abbreviation ?? '',
       teamLogo: team?.logo ?? '',
       teamSlug: team?.slug ?? '',
-      value: c.value,
+      value: freshValues[i] ?? c.value,
     }
   })
 }
