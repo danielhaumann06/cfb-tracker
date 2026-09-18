@@ -30,6 +30,13 @@ function TeamHeader({ team, align }: { team: TeamLeadersPanel; align: 'left' | '
   )
 }
 
+function formatLeaderName(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/)
+  if (parts.length < 2) return fullName
+  const [first, ...rest] = parts
+  return `${first[0].toUpperCase()}.${rest.join(' ')}`
+}
+
 function LeaderCell({
   leader,
   align,
@@ -62,11 +69,11 @@ function LeaderCell({
       <div className="min-w-0">
         <Link
           href={`/player/${leader.playerId}`}
-          className="block truncate text-xs font-medium hover:underline sm:text-sm"
+          className="block truncate text-sm font-medium hover:underline sm:text-base"
         >
-          {leader.playerName || 'Unknown'}
+          {leader.playerName ? formatLeaderName(leader.playerName) : 'Unknown'}
         </Link>
-        <div className="text-xs font-semibold sm:text-sm">{leader.value}</div>
+        <div className="text-sm font-semibold sm:text-base">{leader.value}</div>
       </div>
     </div>
   )
