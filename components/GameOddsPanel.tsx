@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import type { GameOdds } from '@/lib/espn'
 
 function formatMoneyLine(value: number | null): string | null {
@@ -16,8 +17,31 @@ export function GameOddsPanel({ odds }: { odds: GameOdds | null }) {
   return (
     <section className="rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-5 shadow-[var(--shadow-card)]">
       <h2 className="font-semibold">Odds</h2>
-      {odds.provider && (
-        <p className="text-sm text-[var(--text-muted)]">via {odds.provider}</p>
+      {(odds.providerLogoLight || odds.providerLogoDark) ? (
+        <div className="mt-1">
+          {odds.providerLogoLight && (
+            <Image
+              src={odds.providerLogoLight}
+              alt={odds.provider ?? 'Odds provider'}
+              width={80}
+              height={20}
+              unoptimized
+              className={`h-4 w-auto ${odds.providerLogoDark ? 'dark:hidden' : ''}`}
+            />
+          )}
+          {odds.providerLogoDark && (
+            <Image
+              src={odds.providerLogoDark}
+              alt={odds.provider ?? 'Odds provider'}
+              width={80}
+              height={20}
+              unoptimized
+              className={`h-4 w-auto ${odds.providerLogoLight ? 'hidden dark:block' : ''}`}
+            />
+          )}
+        </div>
+      ) : (
+        odds.provider && <p className="text-sm text-[var(--text-muted)]">via {odds.provider}</p>
       )}
       <dl className="mt-3 space-y-1.5 text-sm">
         {odds.details && (

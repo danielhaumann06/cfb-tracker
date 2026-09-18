@@ -67,6 +67,7 @@ export default async function GameCastPage({
   return (
     <main className="mx-auto w-full min-w-0 max-w-3xl px-4 py-8 sm:px-6">
       <GameCastLive
+        key={eventId}
         eventId={eventId}
         initialStatus={status}
         initialOdds={odds}

@@ -62,6 +62,8 @@ export interface GameOdds {
   homeMoneyLine: number | null
   awayMoneyLine: number | null
   provider: string | null
+  providerLogoLight: string | null
+  providerLogoDark: string | null
 }
 
 export interface FpiSummary {
@@ -647,11 +649,13 @@ export async function getTeamSchedule(espnId: string): Promise<GameSummary[]> {
 
 export async function getGameOdds(eventId: string): Promise<GameOdds | null> {
   const res = await fetch(`${SITE_BASE}/summary?event=${eventId}`, {
-    next: { revalidate: 30 },
+    next: { revalidate: 20 },
   })
   const data = await res.json()
   const pick = data.pickcenter?.[0]
   if (!pick) return null
+
+  const providerLogos: Array<{ href: string; rel: string[] }> = pick.provider?.logos ?? []
 
   return {
     details: pick.details ?? null,
@@ -660,6 +664,8 @@ export async function getGameOdds(eventId: string): Promise<GameOdds | null> {
     homeMoneyLine: pick.homeTeamOdds?.moneyLine ?? null,
     awayMoneyLine: pick.awayTeamOdds?.moneyLine ?? null,
     provider: pick.provider?.name ?? null,
+    providerLogoLight: providerLogos.find((l) => l.rel?.includes('light'))?.href ?? null,
+    providerLogoDark: providerLogos.find((l) => l.rel?.includes('dark'))?.href ?? null,
   }
 }
 
@@ -674,7 +680,7 @@ export async function getGamePredictor(
   eventId: string
 ): Promise<GamePredictor | null> {
   const res = await fetch(`${SITE_BASE}/summary?event=${eventId}`, {
-    next: { revalidate: 30 },
+    next: { revalidate: 20 },
   })
   const data = await res.json()
   const predictor = data.predictor
@@ -703,7 +709,7 @@ export async function getGameWinProbabilityHistory(
   eventId: string
 ): Promise<WinProbabilityPoint[]> {
   const res = await fetch(`${SITE_BASE}/summary?event=${eventId}`, {
-    next: { revalidate: 30 },
+    next: { revalidate: 20 },
   })
   const data = await res.json()
   const points = data.winprobability ?? []
@@ -725,7 +731,7 @@ export async function getGameLiveStatus(eventId: string): Promise<{
   venue: string | null
 }> {
   const res = await fetch(`${SITE_BASE}/summary?event=${eventId}`, {
-    next: { revalidate: 30 },
+    next: { revalidate: 20 },
   })
   const data = await res.json()
   const competition = data.header.competitions[0]
@@ -1723,6 +1729,14 @@ export interface GamePlay {
   awayScore: number
   homeScore: number
   scoringPlay: boolean
+  // ESPN's play type text, e.g. "Rush", "Pass Reception", "Pass Incompletion" -
+  // used to decide how to draw the play on the field graphic.
+  typeText: string
+  // Line of scrimmage the play started from, in the same "yards to the
+  // driving team's endzone" units as GameDriveState.yardsToEndzone - lets
+  // the field graphic draw a trajectory back from the current ball spot.
+  startYardsToEndzone: number | null
+  startTeamId: string | null
 }
 
 export interface GameDriveState {
@@ -1764,6 +1778,9 @@ export async function getGameDrivePlays(eventId: string): Promise<GameDriveState
       awayScore: p.awayScore ?? 0,
       homeScore: p.homeScore ?? 0,
       scoringPlay: Boolean(p.scoringPlay),
+      typeText: p.type?.text ?? '',
+      startYardsToEndzone: p.start?.yardsToEndzone ?? null,
+      startTeamId: p.start?.team?.id ?? null,
     }))
 
   return {

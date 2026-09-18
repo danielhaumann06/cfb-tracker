@@ -20,11 +20,11 @@ function TeamHeader({ team, align }: { team: TeamLeadersPanel; align: 'left' | '
       }`}
     >
       {team.logo && (
-        <Image src={team.logo} alt="" width={28} height={28} unoptimized className="shrink-0" />
+        <Image src={team.logo} alt="" width={36} height={36} unoptimized className="shrink-0" />
       )}
       <div className="min-w-0">
-        <div className="truncate text-sm font-medium sm:text-base">{team.nickname}</div>
-        <div className="text-xs text-[var(--text-muted)] sm:text-sm">{team.record}</div>
+        <div className="truncate text-base font-semibold sm:text-lg">{team.nickname}</div>
+        <div className="text-sm text-[var(--text-muted)] sm:text-base">{team.record}</div>
       </div>
     </Link>
   )
@@ -45,12 +45,12 @@ function LeaderCell({
   align: 'left' | 'right'
 }) {
   if (!leader) {
-    return <div className="min-w-0 text-xs text-[var(--text-muted)]">&mdash;</div>
+    return <div className="min-w-0 text-sm text-[var(--text-muted)]">&mdash;</div>
   }
 
   return (
     <div
-      className={`flex min-w-0 items-center gap-2 ${
+      className={`flex min-w-0 items-center gap-3 ${
         align === 'right' ? 'flex-row-reverse text-right' : ''
       }`}
     >
@@ -58,22 +58,22 @@ function LeaderCell({
         <Image
           src={leader.headshot}
           alt=""
-          width={28}
-          height={28}
+          width={44}
+          height={44}
           unoptimized
-          className="h-7 w-7 shrink-0 rounded-full bg-[var(--background)] object-cover"
+          className="h-11 w-11 shrink-0 rounded-full bg-[var(--background)] object-cover"
         />
       ) : (
-        <div className="h-7 w-7 shrink-0 rounded-full bg-[var(--background)]" />
+        <div className="h-11 w-11 shrink-0 rounded-full bg-[var(--background)]" />
       )}
       <div className="min-w-0">
         <Link
           href={`/player/${leader.playerId}`}
-          className="block truncate text-sm font-medium hover:underline sm:text-base"
+          className="block truncate text-base font-medium hover:underline sm:text-lg"
         >
           {leader.playerName ? formatLeaderName(leader.playerName) : 'Unknown'}
         </Link>
-        <div className="text-sm font-semibold sm:text-base">{leader.value}</div>
+        <div className="text-base font-semibold sm:text-lg">{leader.value}</div>
       </div>
     </div>
   )
@@ -114,7 +114,7 @@ export function GameSeasonLeaders({
               className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 py-3 sm:gap-4"
             >
               <LeaderCell leader={row.awayLeader} align="left" />
-              <span className="shrink-0 px-1 text-center text-[10px] text-[var(--text-muted)] sm:text-xs">
+              <span className="shrink-0 px-1 text-center text-xs text-[var(--text-muted)] sm:text-sm">
                 {row.label}
               </span>
               <LeaderCell leader={row.homeLeader} align="right" />

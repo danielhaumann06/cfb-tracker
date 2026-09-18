@@ -116,8 +116,10 @@ export function GameCastLive({
         <>
           <FieldPosition
             possessionTeam={possessionTeam}
+            possessionTeamId={drivePlays.possessionTeamId}
             yardsToEndzone={drivePlays.yardsToEndzone}
             downDistanceText={drivePlays.downDistanceText}
+            lastPlay={drivePlays.plays[0] ?? null}
           />
           <LivePlayFeed plays={drivePlays.plays} />
         </>
