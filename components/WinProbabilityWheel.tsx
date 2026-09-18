@@ -79,20 +79,11 @@ export function WinProbabilityWheel({
           {/* Standard SVG circle stroke-dasharray trick: a circle's dash
               naturally starts at 3 o'clock and sweeps clockwise as offset
               grows, so both arcs are rotated -90deg to start at 12 o'clock
-              instead. */}
-          {awayLength > 0 && (
-            <circle
-              cx={50}
-              cy={50}
-              r={RADIUS}
-              fill="none"
-              stroke={`#${away.color || '9aa5a0'}`}
-              strokeWidth={STROKE}
-              strokeDasharray={`${awayLength} ${CIRCUMFERENCE}`}
-              strokeDashoffset={0}
-              transform="rotate(-90 50 50)"
-            />
-          )}
+              instead. Home is drawn first, sweeping clockwise down the
+              right side (where its own label sits); away then continues
+              from there, back up the left side to its own label. At an
+              even split this puts home on the right half and away on the
+              left half, matching each team's side of the card. */}
           {homeLength > 0 && (
             <circle
               cx={50}
@@ -102,7 +93,20 @@ export function WinProbabilityWheel({
               stroke={`#${home.color || '9aa5a0'}`}
               strokeWidth={STROKE}
               strokeDasharray={`${homeLength} ${CIRCUMFERENCE}`}
-              strokeDashoffset={-awayLength}
+              strokeDashoffset={0}
+              transform="rotate(-90 50 50)"
+            />
+          )}
+          {awayLength > 0 && (
+            <circle
+              cx={50}
+              cy={50}
+              r={RADIUS}
+              fill="none"
+              stroke={`#${away.color || '9aa5a0'}`}
+              strokeWidth={STROKE}
+              strokeDasharray={`${awayLength} ${CIRCUMFERENCE}`}
+              strokeDashoffset={-homeLength}
               transform="rotate(-90 50 50)"
             />
           )}
