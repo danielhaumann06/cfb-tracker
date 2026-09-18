@@ -701,6 +701,10 @@ export async function getGamePredictor(
 export interface WinProbabilityPoint {
   playId: string
   homeWinPct: number
+  quarter: number | null
+  clock: string | null
+  homeScore: number | null
+  awayScore: number | null
 }
 
 // ESPN recomputes this after every play once a game has kicked off - an
@@ -714,10 +718,30 @@ export async function getGameWinProbabilityHistory(
   const data = await res.json()
   const points = data.winprobability ?? []
 
-  return (points as any[]).map((p) => ({
-    playId: String(p.playId),
-    homeWinPct: Math.round((p.homeWinPercentage ?? 0) * 1000) / 10,
-  }))
+  // Win probability points only carry a playId - join back to the play-by-play
+  // (same response) to label each point with when it happened in the game.
+  const drives = [
+    ...(data.drives?.previous ?? []),
+    ...(data.drives?.current ? [data.drives.current] : []),
+  ]
+  const playsById = new Map<string, any>()
+  for (const drive of drives) {
+    for (const play of drive.plays ?? []) {
+      playsById.set(String(play.id), play)
+    }
+  }
+
+  return (points as any[]).map((p) => {
+    const play = playsById.get(String(p.playId))
+    return {
+      playId: String(p.playId),
+      homeWinPct: Math.round((p.homeWinPercentage ?? 0) * 1000) / 10,
+      quarter: play?.period?.number ?? null,
+      clock: play?.clock?.displayValue ?? null,
+      homeScore: play?.homeScore ?? null,
+      awayScore: play?.awayScore ?? null,
+    }
+  })
 }
 
 export async function getGameLiveStatus(eventId: string): Promise<{
