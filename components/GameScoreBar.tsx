@@ -1,16 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import type { GameTeam } from '@/lib/espn'
-
-function formatKickoff(dateIso: string): string {
-  return new Date(dateIso).toLocaleString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  })
-}
+import { formatKickoff } from '@/lib/formatKickoff'
 
 function TeamScore({ team, slug }: { team: GameTeam; slug?: string }) {
   const content = (

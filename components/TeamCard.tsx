@@ -1,16 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import type { TeamSummary, GameSummary, GameOdds, FpiSummary } from '@/lib/espn'
-
-function formatKickoff(dateIso: string): string {
-  return new Date(dateIso).toLocaleString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  })
-}
+import { formatKickoff } from '@/lib/formatKickoff'
 
 export function TeamCard({
   slug,

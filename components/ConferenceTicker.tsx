@@ -3,13 +3,10 @@
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import type { ConferenceGame } from '@/lib/espn'
+import { formatKickoff as formatKickoffBase } from '@/lib/formatKickoff'
 
 function formatKickoff(dateIso: string): string {
-  return new Date(dateIso).toLocaleString('en-US', {
-    weekday: 'short',
-    hour: 'numeric',
-    minute: '2-digit',
-  })
+  return formatKickoffBase(dateIso, { monthDay: false })
 }
 
 function TickerTeamScore({ team }: { team: ConferenceGame['home'] }) {

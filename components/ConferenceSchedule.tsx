@@ -8,16 +8,7 @@ import type {
   ScheduleGame,
   ScheduleTeam,
 } from '@/lib/espn'
-
-function formatKickoff(dateIso: string): string {
-  return new Date(dateIso).toLocaleString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  })
-}
+import { formatKickoff } from '@/lib/formatKickoff'
 
 function TeamLink({ team }: { team: ScheduleTeam }) {
   const content = (

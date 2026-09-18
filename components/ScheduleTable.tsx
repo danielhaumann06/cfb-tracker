@@ -1,19 +1,11 @@
 import Link from 'next/link'
 import type { GameOdds, GameSummary } from '@/lib/espn'
+import { formatKickoff as formatDate } from '@/lib/formatKickoff'
 
 // Michigan vs. Western Michigan, Week 1 2026 - the MAC has formally
 // appealed this result to the NCAA/CFP, seeking to have Western Michigan
 // recognized as the winner instead. Flag it wherever the score appears.
 const DISPUTED_GAME_ID = '401858428'
-
-function formatDate(dateIso: string): string {
-  return new Date(dateIso).toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  })
-}
 
 export function ScheduleTable({
   slug,
@@ -62,7 +54,7 @@ export function ScheduleTable({
                   {game.week ?? '—'}
                 </td>
                 <td className="px-4 py-2">
-                  <div>{formatDate(game.date)}</div>
+                  <div>{formatDate(game.date, { weekday: false })}</div>
                   {game.network && (
                     <div className="text-xs text-[var(--text-muted)]">
                       {game.network}
