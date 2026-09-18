@@ -71,11 +71,11 @@ function LeaderCell({
       <div className="min-w-0">
         <Link
           href={`/player/${leader.playerId}`}
-          className="block truncate text-base font-medium hover:underline sm:text-lg"
+          className="block truncate text-xs font-medium hover:underline sm:text-sm"
         >
           {leader.playerName ? formatLeaderName(leader.playerName) : 'Unknown'}
         </Link>
-        <div className="text-base font-semibold sm:text-lg">{leader.value}</div>
+        <div className="text-xs font-semibold sm:text-sm">{leader.value}</div>
       </div>
     </div>
   )

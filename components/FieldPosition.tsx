@@ -38,6 +38,36 @@ function project(x: number, depth: number) {
   }
 }
 
+// Objects standing "up" off the field (goal posts) need to shrink with
+// depth the same way the ground plane does, so they read as further away
+// rather than just floating at a fixed size.
+const SCALE_NEAR = 1
+const SCALE_FAR = 0.4
+const scaleAt = (depth: number) => SCALE_NEAR + (SCALE_FAR - SCALE_NEAR) * depth
+
+const GOAL_DEPTH = 0.5 // planted mid-width, behind the back of each end zone
+const GOAL_POLE_HEIGHT = 7 // pole rising from the ground to the crossbar
+const GOAL_UPRIGHT_HEIGHT = 11 // uprights rising further from the crossbar
+const GOAL_SPREAD = 5.5 // half the gap between the two uprights
+
+function goalPostGeometry(goalLineX: number) {
+  const base = project(goalLineX, GOAL_DEPTH)
+  const s = scaleAt(GOAL_DEPTH)
+  const crossbarY = base.y - GOAL_POLE_HEIGHT * s
+  const topY = crossbarY - GOAL_UPRIGHT_HEIGHT * s
+  const spread = GOAL_SPREAD * s
+  return {
+    baseX: base.x,
+    baseY: base.y,
+    crossbarY,
+    topY,
+    leftX: base.x - spread,
+    rightX: base.x + spread,
+    poleWidth: 0.55 * s,
+    barWidth: 0.5 * s,
+  }
+}
+
 // Converts a play's "yards to endzone" (recorded relative to whichever team
 // had the ball at that instant) into the same 0-100 scale the field graphic
 // is drawn in, which is always relative to the current possession team.
@@ -115,6 +145,9 @@ export function FieldPosition({
   const nearEndzoneFar = project(8, 1)
   const farEndzoneFar = project(92, 1)
 
+  const leftGoalPost = goalPostGeometry(0)
+  const rightGoalPost = goalPostGeometry(100)
+
   return (
     <section className="rounded-xl bg-[var(--surface-1)] p-5 shadow-[var(--shadow-card)]">
       <div className="flex items-center justify-between gap-2">
@@ -149,6 +182,19 @@ export function FieldPosition({
             <linearGradient id="fp-apron" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#3d8c4e" />
               <stop offset="100%" stopColor="#0e2214" />
+            </linearGradient>
+            {/* Cylindrical highlight for the uprights/pole - light down the
+                middle, dark at the edges - so they read as round, not flat. */}
+            <linearGradient id="fp-goalpost-v" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#8a6100" />
+              <stop offset="42%" stopColor="#ffe066" />
+              <stop offset="58%" stopColor="#ffcc00" />
+              <stop offset="100%" stopColor="#8a6100" />
+            </linearGradient>
+            <linearGradient id="fp-goalpost-h" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#ffe680" />
+              <stop offset="45%" stopColor="#ffcc00" />
+              <stop offset="100%" stopColor="#8a6100" />
             </linearGradient>
           </defs>
 
@@ -191,6 +237,51 @@ export function FieldPosition({
           {/* Sidelines */}
           <line x1={nearLeft.x} y1={nearLeft.y} x2={nearRight.x} y2={nearRight.y} stroke="rgba(255,255,255,0.6)" strokeWidth={0.5} />
           <line x1={farLeft.x} y1={farLeft.y} x2={farRight.x} y2={farRight.y} stroke="rgba(255,255,255,0.5)" strokeWidth={0.35} />
+
+          {/* Field goal posts, planted behind each end zone */}
+          {[leftGoalPost, rightGoalPost].map((post, i) => (
+            <g key={i}>
+              <ellipse
+                cx={post.baseX}
+                cy={post.baseY}
+                rx={post.poleWidth * 2.2}
+                ry={post.poleWidth * 0.8}
+                fill="rgba(0,0,0,0.35)"
+              />
+              <rect
+                x={post.baseX - post.poleWidth / 2}
+                y={post.crossbarY}
+                width={post.poleWidth}
+                height={post.baseY - post.crossbarY}
+                rx={post.poleWidth / 2}
+                fill="url(#fp-goalpost-v)"
+              />
+              <rect
+                x={post.leftX}
+                y={post.crossbarY - post.barWidth / 2}
+                width={post.rightX - post.leftX}
+                height={post.barWidth}
+                rx={post.barWidth / 2}
+                fill="url(#fp-goalpost-h)"
+              />
+              <rect
+                x={post.leftX - post.poleWidth / 2}
+                y={post.topY}
+                width={post.poleWidth}
+                height={post.crossbarY - post.topY}
+                rx={post.poleWidth / 2}
+                fill="url(#fp-goalpost-v)"
+              />
+              <rect
+                x={post.rightX - post.poleWidth / 2}
+                y={post.topY}
+                width={post.poleWidth}
+                height={post.crossbarY - post.topY}
+                rx={post.poleWidth / 2}
+                fill="url(#fp-goalpost-v)"
+              />
+            </g>
+          ))}
 
           {/* Foreground apron in front of the near sideline, toward the viewer's seat */}
           <polygon
@@ -244,9 +335,22 @@ export function FieldPosition({
           {start && <circle cx={start.x} cy={start.y} r={1} fill="rgba(255,255,255,0.65)" />}
         </svg>
         <div
-          className="absolute h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow"
+          className="absolute flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white shadow-lg"
           style={{ left: `${ball.x}%`, top: `${(ball.y / VIEW_H) * 100}%`, background: markerColor }}
-        />
+        >
+          {possessionTeam?.logo ? (
+            <Image
+              src={possessionTeam.logo}
+              alt=""
+              width={20}
+              height={20}
+              unoptimized
+              className="h-5 w-5 object-contain"
+            />
+          ) : (
+            <div className="h-2.5 w-2.5 rounded-full bg-white" />
+          )}
+        </div>
       </div>
     </section>
   )
