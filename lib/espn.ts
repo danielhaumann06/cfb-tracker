@@ -1579,7 +1579,7 @@ export interface TeamBoxscore {
 export interface PlayerCategory {
   name: string
   labels: string[]
-  rows: { playerId: string; name: string; values: string[] }[]
+  rows: { playerId: string; name: string; headshot: string; values: string[] }[]
 }
 
 export interface TeamPlayerStats {
@@ -1748,6 +1748,7 @@ export async function getGameBoxscore(
         rows: (cat.athletes ?? []).map((a: any) => ({
           playerId: a.athlete.id,
           name: a.athlete.displayName,
+          headshot: a.athlete.headshot?.href ?? '',
           values: a.stats,
         })),
       })),

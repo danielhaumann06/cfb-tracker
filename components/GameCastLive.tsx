@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import type {
+  GameBoxscore,
   GameDriveState,
   GameOdds,
   GamePredictor,
@@ -15,6 +16,9 @@ import { WinProbabilityWheel, type WheelTeam } from './WinProbabilityWheel'
 import { WinProbabilityChart } from './WinProbabilityChart'
 import { FieldPosition } from './FieldPosition'
 import { LivePlayFeed } from './LivePlayFeed'
+import { GameSeasonLeaders, type TeamLeadersPanel } from './GameSeasonLeaders'
+import { TeamTotalsTable } from './TeamTotalsTable'
+import { PlayerStatsSection } from './PlayerStatsSection'
 
 interface LiveStatus {
   home: GameTeam
@@ -43,6 +47,9 @@ export function GameCastLive({
   initialPredictor,
   initialWinProbability,
   initialDrivePlays,
+  initialBoxscore,
+  seasonHomePanel,
+  seasonAwayPanel,
   homeWheelTeam,
   awayWheelTeam,
   homeSlug,
@@ -54,6 +61,9 @@ export function GameCastLive({
   initialPredictor: GamePredictor | null
   initialWinProbability: WinProbabilityPoint[]
   initialDrivePlays: GameDriveState | null
+  initialBoxscore: GameBoxscore | null
+  seasonHomePanel: TeamLeadersPanel
+  seasonAwayPanel: TeamLeadersPanel
   homeWheelTeam: WheelTeam
   awayWheelTeam: WheelTeam
   homeSlug: string
@@ -64,6 +74,7 @@ export function GameCastLive({
   const [predictor, setPredictor] = useState(initialPredictor)
   const [winProbability, setWinProbability] = useState(initialWinProbability)
   const [drivePlays, setDrivePlays] = useState(initialDrivePlays)
+  const [boxscore, setBoxscore] = useState(initialBoxscore)
 
   useEffect(() => {
     if (status.completed) return
@@ -80,6 +91,7 @@ export function GameCastLive({
           setPredictor(data.predictor)
           setWinProbability(data.winProbability)
           setDrivePlays(data.drivePlays)
+          setBoxscore(data.boxscore)
         }
       } catch {
         // stale data is fine until the next tick
@@ -147,6 +159,24 @@ export function GameCastLive({
           awayAbbreviation={status.away.abbreviation}
           homeColor={homeWheelTeam.color}
         />
+      )}
+
+      {status.state === 'in' ? (
+        boxscore ? (
+          <div className="space-y-6">
+            <h2 className="font-semibold">Live Box Score</h2>
+            <TeamTotalsTable teams={boxscore.teams} />
+            <div className="grid gap-6 sm:grid-cols-2">
+              {boxscore.players.map((team) => (
+                <PlayerStatsSection key={team.teamId} team={team} />
+              ))}
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-[var(--text-muted)]">Live stats not available yet.</p>
+        )
+      ) : (
+        <GameSeasonLeaders home={seasonHomePanel} away={seasonAwayPanel} />
       )}
     </div>
   )

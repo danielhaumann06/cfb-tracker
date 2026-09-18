@@ -3,6 +3,8 @@ import Link from 'next/link'
 import type { PlayerCategory, TeamPlayerStats } from '@/lib/espn'
 import { groupPlayerCategories, STAT_CATEGORY_LABELS } from '@/lib/espn'
 
+const HEADSHOT_SIZE = 24
+
 const NAME_SUFFIXES = new Set(['jr', 'sr', 'ii', 'iii', 'iv', 'v'])
 
 function lastName(fullName: string): string {
@@ -25,7 +27,7 @@ function CategoryTable({ category }: { category: PlayerCategory }) {
       <table className="w-full table-fixed text-[11px] sm:text-xs">
         <thead>
           <tr className="border-b border-[var(--gridline)] text-left text-[var(--text-muted)]">
-            <th className="w-16 truncate px-1.5 py-1 font-normal sm:w-20 sm:px-2">
+            <th className="w-20 truncate px-1.5 py-1 font-normal sm:w-28 sm:px-2">
               {STAT_CATEGORY_LABELS[category.name] ?? category.name}
             </th>
             {category.labels.map((label) => (
@@ -41,15 +43,26 @@ function CategoryTable({ category }: { category: PlayerCategory }) {
               key={row.playerId}
               className="border-b border-[var(--gridline)] last:border-0"
             >
-              <td
-                className="truncate px-1.5 py-1 sm:px-2"
-                title={row.name}
-              >
+              <td className="px-1.5 py-1 sm:px-2" title={row.name}>
                 <Link
                   href={`/player/${row.playerId}`}
-                  className="underline decoration-[var(--border-hairline)] underline-offset-2 hover:decoration-current"
+                  className="flex items-center gap-1.5 hover:underline"
                 >
-                  {lastName(row.name)}
+                  {row.headshot ? (
+                    <Image
+                      src={row.headshot}
+                      alt=""
+                      width={HEADSHOT_SIZE}
+                      height={HEADSHOT_SIZE}
+                      unoptimized
+                      className="h-6 w-6 shrink-0 rounded-full bg-[var(--background)] object-cover"
+                    />
+                  ) : (
+                    <div className="h-6 w-6 shrink-0 rounded-full bg-[var(--background)]" />
+                  )}
+                  <span className="truncate underline decoration-[var(--border-hairline)] underline-offset-2 hover:decoration-current">
+                    {lastName(row.name)}
+                  </span>
                 </Link>
               </td>
               {row.values.map((value, i) => (

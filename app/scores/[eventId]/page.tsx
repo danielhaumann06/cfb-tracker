@@ -1,12 +1,13 @@
 import { notFound } from 'next/navigation'
 import { GameCastLive } from '@/components/GameCastLive'
-import { GameSeasonLeaders, type TeamLeadersPanel } from '@/components/GameSeasonLeaders'
+import { type TeamLeadersPanel } from '@/components/GameSeasonLeaders'
 import {
   getGameLiveStatus,
   getGameOdds,
   getGamePredictor,
   getGameWinProbabilityHistory,
   getGameDrivePlays,
+  getGameBoxscore,
   getTeamStatLeaders,
   getTeamSummary,
   getAllTeams,
@@ -24,13 +25,15 @@ export default async function GameCastPage({
   let predictor
   let winProbability
   let drivePlays
+  let boxscore
   try {
-    ;[status, odds, predictor, winProbability, drivePlays] = await Promise.all([
+    ;[status, odds, predictor, winProbability, drivePlays, boxscore] = await Promise.all([
       getGameLiveStatus(eventId),
       getGameOdds(eventId),
       getGamePredictor(eventId),
       getGameWinProbabilityHistory(eventId),
       getGameDrivePlays(eventId),
+      getGameBoxscore(eventId),
     ])
   } catch {
     notFound()
@@ -74,6 +77,9 @@ export default async function GameCastPage({
         initialPredictor={predictor}
         initialWinProbability={winProbability}
         initialDrivePlays={drivePlays}
+        initialBoxscore={boxscore}
+        seasonHomePanel={homePanel}
+        seasonAwayPanel={awayPanel}
         homeWheelTeam={{
           abbreviation: status.home.abbreviation,
           logo: status.home.logo,
@@ -87,10 +93,6 @@ export default async function GameCastPage({
         homeSlug={slugById.get(status.home.id) ?? ''}
         awaySlug={slugById.get(status.away.id) ?? ''}
       />
-
-      <div className="mt-6">
-        <GameSeasonLeaders home={homePanel} away={awayPanel} />
-      </div>
     </main>
   )
 }
