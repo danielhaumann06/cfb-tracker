@@ -12,14 +12,31 @@ function formatKickoff(dateIso: string): string {
   })
 }
 
+function TimeoutDots({ remaining, align }: { remaining: number; align: 'left' | 'right' }) {
+  return (
+    <div className={`mt-1 flex gap-1 ${align === 'right' ? 'flex-row-reverse' : ''}`}>
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className={`h-1.5 w-1.5 rounded-full ${
+            i < remaining ? 'bg-[var(--seq-fill)]' : 'bg-[var(--gridline)]'
+          }`}
+        />
+      ))}
+    </div>
+  )
+}
+
 function TeamBlock({
   team,
   slug,
   align,
+  timeouts,
 }: {
   team: GameTeam
   slug: string
   align: 'left' | 'right'
+  timeouts: number | null
 }) {
   const content = (
     <div
@@ -36,6 +53,7 @@ function TeamBlock({
           {team.nickname}
         </div>
         <div className="text-3xl font-bold">{team.score ?? '—'}</div>
+        {timeouts != null && <TimeoutDots remaining={timeouts} align={align} />}
       </div>
     </div>
   )
@@ -61,6 +79,8 @@ export function GameCastHeader({
   date,
   network,
   venue,
+  homeTimeouts,
+  awayTimeouts,
 }: {
   away: GameTeam
   home: GameTeam
@@ -73,6 +93,8 @@ export function GameCastHeader({
   date?: string
   network?: string | null
   venue?: string | null
+  homeTimeouts?: number | null
+  awayTimeouts?: number | null
 }) {
   const from = `#${awayColor || '6b7280'}`
   const to = `#${homeColor || '6b7280'}`
@@ -83,7 +105,7 @@ export function GameCastHeader({
       style={{ background: `linear-gradient(to right, ${from}26, ${to}26)` }}
     >
       <div className="flex items-center justify-between gap-3">
-        <TeamBlock team={away} slug={awaySlug} align="left" />
+        <TeamBlock team={away} slug={awaySlug} align="left" timeouts={live ? (awayTimeouts ?? null) : null} />
         <div className="shrink-0 px-2 text-center text-xs text-[var(--text-muted)]">
           {live && (
             <span className="mb-1 inline-block rounded-full bg-[var(--seq-fill)] px-2 py-0.5 text-[10px] font-semibold text-white">
@@ -92,7 +114,7 @@ export function GameCastHeader({
           )}
           <div>{statusDetail}</div>
         </div>
-        <TeamBlock team={home} slug={homeSlug} align="right" />
+        <TeamBlock team={home} slug={homeSlug} align="right" timeouts={live ? (homeTimeouts ?? null) : null} />
       </div>
 
       {(date || network || venue) && (

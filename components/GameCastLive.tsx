@@ -25,6 +25,8 @@ interface LiveStatus {
   date: string
   network: string | null
   venue: string | null
+  homeTimeouts: number | null
+  awayTimeouts: number | null
 }
 
 const FIVE_MINUTES_MS = 5 * 60 * 1000
@@ -110,6 +112,8 @@ export function GameCastLive({
         date={status.date}
         network={status.network}
         venue={status.venue}
+        homeTimeouts={status.homeTimeouts}
+        awayTimeouts={status.awayTimeouts}
       />
 
       {status.state === 'in' && drivePlays && (

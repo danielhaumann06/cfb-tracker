@@ -48,24 +48,59 @@ const scaleAt = (depth: number) => SCALE_NEAR + (SCALE_FAR - SCALE_NEAR) * depth
 const GOAL_DEPTH = 0.5 // planted mid-width, behind the back of each end zone
 const GOAL_POLE_HEIGHT = 7 // pole rising from the ground to the crossbar
 const GOAL_UPRIGHT_HEIGHT = 11 // uprights rising further from the crossbar
-const GOAL_SPREAD = 5.5 // half the gap between the two uprights
+// The uprights sit side-by-side across the field's WIDTH, not its length -
+// so their spread has to be expressed as a depth offset (like the sidelines)
+// rather than a screen-x offset, or the crossbar ends up facing the camera
+// flat-on instead of receding into the same perspective as the rest of the field.
+const GOAL_UPRIGHT_DEPTH_OFFSET = 0.09
 
 function goalPostGeometry(goalLineX: number) {
+  const leftDepth = GOAL_DEPTH - GOAL_UPRIGHT_DEPTH_OFFSET
+  const rightDepth = GOAL_DEPTH + GOAL_UPRIGHT_DEPTH_OFFSET
+
   const base = project(goalLineX, GOAL_DEPTH)
-  const s = scaleAt(GOAL_DEPTH)
-  const crossbarY = base.y - GOAL_POLE_HEIGHT * s
-  const topY = crossbarY - GOAL_UPRIGHT_HEIGHT * s
-  const spread = GOAL_SPREAD * s
-  return {
-    baseX: base.x,
-    baseY: base.y,
-    crossbarY,
-    topY,
-    leftX: base.x - spread,
-    rightX: base.x + spread,
-    poleWidth: 0.55 * s,
-    barWidth: 0.5 * s,
+  const leftGround = project(goalLineX, leftDepth)
+  const rightGround = project(goalLineX, rightDepth)
+
+  const sLeft = scaleAt(leftDepth)
+  const sRight = scaleAt(rightDepth)
+  const sCenter = scaleAt(GOAL_DEPTH)
+
+  const leftCrossbar = { x: leftGround.x, y: leftGround.y - GOAL_POLE_HEIGHT * sLeft }
+  const rightCrossbar = { x: rightGround.x, y: rightGround.y - GOAL_POLE_HEIGHT * sRight }
+  const leftTop = { x: leftCrossbar.x, y: leftCrossbar.y - GOAL_UPRIGHT_HEIGHT * sLeft }
+  const rightTop = { x: rightCrossbar.x, y: rightCrossbar.y - GOAL_UPRIGHT_HEIGHT * sRight }
+  // Where the single support pole meets the crossbar - the midpoint of the
+  // (angled) crossbar itself, so the pole always visibly touches it.
+  const crossbarMid = {
+    x: (leftCrossbar.x + rightCrossbar.x) / 2,
+    y: (leftCrossbar.y + rightCrossbar.y) / 2,
   }
+
+  return {
+    base,
+    crossbarMid,
+    leftCrossbar,
+    rightCrossbar,
+    leftTop,
+    rightTop,
+    poleWidth: 0.6 * sCenter,
+    barWidth: 0.35 * sCenter,
+  }
+}
+
+type Point = { x: number; y: number }
+type GoalPost = ReturnType<typeof goalPostGeometry>
+
+// The support pole, both uprights, and the crossbar - as (start, end, beam
+// width) triples so they can all be drawn with the same beam renderer.
+function goalPostBeams(post: GoalPost): Array<[Point, Point, number]> {
+  return [
+    [post.base, post.crossbarMid, post.poleWidth],
+    [post.leftCrossbar, post.rightCrossbar, post.barWidth],
+    [post.leftCrossbar, post.leftTop, post.poleWidth],
+    [post.rightCrossbar, post.rightTop, post.poleWidth],
+  ]
 }
 
 // Converts a play's "yards to endzone" (recorded relative to whichever team
@@ -183,19 +218,6 @@ export function FieldPosition({
               <stop offset="0%" stopColor="#3d8c4e" />
               <stop offset="100%" stopColor="#0e2214" />
             </linearGradient>
-            {/* Cylindrical highlight for the uprights/pole - light down the
-                middle, dark at the edges - so they read as round, not flat. */}
-            <linearGradient id="fp-goalpost-v" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#8a6100" />
-              <stop offset="42%" stopColor="#ffe066" />
-              <stop offset="58%" stopColor="#ffcc00" />
-              <stop offset="100%" stopColor="#8a6100" />
-            </linearGradient>
-            <linearGradient id="fp-goalpost-h" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#ffe680" />
-              <stop offset="45%" stopColor="#ffcc00" />
-              <stop offset="100%" stopColor="#8a6100" />
-            </linearGradient>
           </defs>
 
           {/* Distant stands beyond the far sideline */}
@@ -238,48 +260,42 @@ export function FieldPosition({
           <line x1={nearLeft.x} y1={nearLeft.y} x2={nearRight.x} y2={nearRight.y} stroke="rgba(255,255,255,0.6)" strokeWidth={0.5} />
           <line x1={farLeft.x} y1={farLeft.y} x2={farRight.x} y2={farRight.y} stroke="rgba(255,255,255,0.5)" strokeWidth={0.35} />
 
-          {/* Field goal posts, planted behind each end zone */}
+          {/* Field goal posts, planted behind each end zone. Each beam is drawn
+              as a dark base stroke plus a thinner bright stroke down the
+              middle - a cylindrical highlight that works at any angle, since
+              the beams tilt with the field's perspective rather than sitting
+              flat on-axis. */}
           {[leftGoalPost, rightGoalPost].map((post, i) => (
             <g key={i}>
               <ellipse
-                cx={post.baseX}
-                cy={post.baseY}
+                cx={post.base.x}
+                cy={post.base.y}
                 rx={post.poleWidth * 2.2}
                 ry={post.poleWidth * 0.8}
                 fill="rgba(0,0,0,0.35)"
               />
-              <rect
-                x={post.baseX - post.poleWidth / 2}
-                y={post.crossbarY}
-                width={post.poleWidth}
-                height={post.baseY - post.crossbarY}
-                rx={post.poleWidth / 2}
-                fill="url(#fp-goalpost-v)"
-              />
-              <rect
-                x={post.leftX}
-                y={post.crossbarY - post.barWidth / 2}
-                width={post.rightX - post.leftX}
-                height={post.barWidth}
-                rx={post.barWidth / 2}
-                fill="url(#fp-goalpost-h)"
-              />
-              <rect
-                x={post.leftX - post.poleWidth / 2}
-                y={post.topY}
-                width={post.poleWidth}
-                height={post.crossbarY - post.topY}
-                rx={post.poleWidth / 2}
-                fill="url(#fp-goalpost-v)"
-              />
-              <rect
-                x={post.rightX - post.poleWidth / 2}
-                y={post.topY}
-                width={post.poleWidth}
-                height={post.crossbarY - post.topY}
-                rx={post.poleWidth / 2}
-                fill="url(#fp-goalpost-v)"
-              />
+              {goalPostBeams(post).map(([from, to, width], j) => (
+                <g key={j}>
+                  <line
+                    x1={from.x}
+                    y1={from.y}
+                    x2={to.x}
+                    y2={to.y}
+                    stroke="#8a6100"
+                    strokeWidth={width}
+                    strokeLinecap="round"
+                  />
+                  <line
+                    x1={from.x}
+                    y1={from.y}
+                    x2={to.x}
+                    y2={to.y}
+                    stroke="#ffd633"
+                    strokeWidth={width * 0.45}
+                    strokeLinecap="round"
+                  />
+                </g>
+              ))}
             </g>
           ))}
 

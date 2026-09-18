@@ -753,11 +753,21 @@ export async function getGameLiveStatus(eventId: string): Promise<{
   date: string
   network: string | null
   venue: string | null
+  homeTimeouts: number | null
+  awayTimeouts: number | null
 }> {
-  const res = await fetch(`${SITE_BASE}/summary?event=${eventId}`, {
-    next: { revalidate: 20 },
-  })
+  const [res, situationRes] = await Promise.all([
+    fetch(`${SITE_BASE}/summary?event=${eventId}`, { next: { revalidate: 20 } }),
+    // Timeouts remaining aren't in the summary response - this dedicated
+    // "situation" sub-resource is small and only meaningful while a game
+    // is live (it comes back with no homeTimeouts/awayTimeouts otherwise).
+    fetch(
+      `${CORE_BASE}/events/${eventId}/competitions/${eventId}/situation?lang=en&region=us`,
+      { next: { revalidate: 20 } }
+    ).catch(() => null),
+  ])
   const data = await res.json()
+  const situation = situationRes && situationRes.ok ? await situationRes.json().catch(() => null) : null
   const competition = data.header.competitions[0]
   const home = competition.competitors.find((c: any) => c.homeAway === 'home')
   const away = competition.competitors.find((c: any) => c.homeAway === 'away')
@@ -769,6 +779,8 @@ export async function getGameLiveStatus(eventId: string): Promise<{
     date: competition.date,
     network: competition.broadcasts?.[0]?.media?.shortName ?? null,
     venue: data.gameInfo?.venue?.fullName ?? null,
+    homeTimeouts: situation?.homeTimeouts ?? null,
+    awayTimeouts: situation?.awayTimeouts ?? null,
   }
 }
 
