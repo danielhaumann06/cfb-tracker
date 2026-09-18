@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { PageNav } from './PageNav'
+import { PullToRefresh } from './PullToRefresh'
 import { TopTabs } from './TopTabs'
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -19,7 +20,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       }
     >
       {!isHome && <TopTabs />}
-      {children}
+      <PullToRefresh>{children}</PullToRefresh>
       {!isHome && <PageNav />}
     </div>
   )
