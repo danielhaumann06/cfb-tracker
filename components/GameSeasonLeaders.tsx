@@ -23,7 +23,9 @@ function TeamHeader({ team, align }: { team: TeamLeadersPanel; align: 'left' | '
         <Image src={team.logo} alt="" width={36} height={36} unoptimized className="shrink-0" />
       )}
       <div className="min-w-0">
-        <div className="truncate text-base font-semibold sm:text-lg">{team.nickname}</div>
+        <div className="text-base leading-tight font-semibold text-balance sm:text-lg">
+          {team.nickname}
+        </div>
         <div className="text-sm text-[var(--text-muted)] sm:text-base">{team.record}</div>
       </div>
     </Link>
