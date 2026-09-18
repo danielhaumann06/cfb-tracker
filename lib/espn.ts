@@ -1769,11 +1769,14 @@ export interface GamePlay {
   // ESPN's play type text, e.g. "Rush", "Pass Reception", "Pass Incompletion" -
   // used to decide how to draw the play on the field graphic.
   typeText: string
-  // Line of scrimmage the play started from, in the same "yards to the
+  // Line of scrimmage the play started/ended at, in the same "yards to the
   // driving team's endzone" units as GameDriveState.yardsToEndzone - lets
-  // the field graphic draw a trajectory back from the current ball spot.
+  // the field graphic draw each play's own trajectory rather than just the
+  // most recent one.
   startYardsToEndzone: number | null
   startTeamId: string | null
+  endYardsToEndzone: number | null
+  endTeamId: string | null
 }
 
 export interface GameDriveState {
@@ -1784,6 +1787,27 @@ export interface GameDriveState {
   // place the ball marker on the field graphic.
   yardsToEndzone: number | null
   plays: GamePlay[]
+  // Every play of the drive currently in progress, oldest first - lets the
+  // field graphic draw the whole drive (each run/pass so far), not just the
+  // most recent play. Empty once the game isn't live (no drive in progress).
+  currentDrivePlays: GamePlay[]
+}
+
+function mapPlay(p: any): GamePlay {
+  return {
+    id: p.id,
+    text: p.text ?? '',
+    quarter: p.period?.number ?? 0,
+    clock: p.clock?.displayValue ?? '',
+    awayScore: p.awayScore ?? 0,
+    homeScore: p.homeScore ?? 0,
+    scoringPlay: Boolean(p.scoringPlay),
+    typeText: p.type?.text ?? '',
+    startYardsToEndzone: p.start?.yardsToEndzone ?? null,
+    startTeamId: p.start?.team?.id ?? null,
+    endYardsToEndzone: p.end?.yardsToEndzone ?? null,
+    endTeamId: p.end?.team?.id ?? null,
+  }
 }
 
 // data.drives.current only exists while a drive is still in progress (a
@@ -1794,37 +1818,34 @@ export async function getGameDrivePlays(eventId: string): Promise<GameDriveState
   const res = await fetch(`${SITE_BASE}/summary?event=${eventId}`, {
     next: { revalidate: 20 },
   })
-  if (!res.ok) return { possessionTeamId: null, downDistanceText: null, yardsToEndzone: null, plays: [] }
+  if (!res.ok) {
+    return {
+      possessionTeamId: null,
+      downDistanceText: null,
+      yardsToEndzone: null,
+      plays: [],
+      currentDrivePlays: [],
+    }
+  }
   const data = await res.json()
 
+  const currentDrive = data.drives?.current
   const drives = [
     ...(data.drives?.previous ?? []),
-    ...(data.drives?.current ? [data.drives.current] : []),
+    ...(currentDrive ? [currentDrive] : []),
   ]
   const allPlays: any[] = drives.flatMap((d: any) => d.plays ?? [])
   const lastPlay = allPlays[allPlays.length - 1]
 
-  const plays: GamePlay[] = allPlays
-    .slice(-15)
-    .reverse()
-    .map((p: any) => ({
-      id: p.id,
-      text: p.text ?? '',
-      quarter: p.period?.number ?? 0,
-      clock: p.clock?.displayValue ?? '',
-      awayScore: p.awayScore ?? 0,
-      homeScore: p.homeScore ?? 0,
-      scoringPlay: Boolean(p.scoringPlay),
-      typeText: p.type?.text ?? '',
-      startYardsToEndzone: p.start?.yardsToEndzone ?? null,
-      startTeamId: p.start?.team?.id ?? null,
-    }))
+  const plays: GamePlay[] = allPlays.slice(-15).reverse().map(mapPlay)
+  const currentDrivePlays: GamePlay[] = (currentDrive?.plays ?? []).map(mapPlay)
 
   return {
     possessionTeamId: lastPlay?.end?.team?.id ?? null,
     downDistanceText: lastPlay?.end?.downDistanceText ?? null,
     yardsToEndzone: lastPlay?.end?.yardsToEndzone ?? null,
     plays,
+    currentDrivePlays,
   }
 }
 

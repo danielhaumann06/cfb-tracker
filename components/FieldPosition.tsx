@@ -129,49 +129,78 @@ function incompleteDepthYards(text: string): number {
   return 9
 }
 
+interface DrawablePlay {
+  kind: 'rush' | 'pass-complete' | 'pass-incomplete'
+  start: Point
+  end: Point
+  peak: Point | null
+  opacity: number
+}
+
+// Turns the drive's plays into ones we know how to draw (skipping kickoffs,
+// penalties, etc.), each projected into screen space with its own start and
+// end - so a run followed by a pass shows up as two distinct trajectories
+// instead of just the most recent one.
+function buildDrawablePlays(
+  plays: GamePlay[],
+  possessionTeamId: string | null
+): DrawablePlay[] {
+  const drawable = plays.flatMap((play) => {
+    const startPct = fieldPct(play.startYardsToEndzone, play.startTeamId, possessionTeamId)
+    if (startPct == null) return []
+
+    let kind: DrawablePlay['kind'] | null = null
+    if (RUSH_TYPES.has(play.typeText)) kind = 'rush'
+    else if (PASS_COMPLETE_TYPES.has(play.typeText)) kind = 'pass-complete'
+    else if (PASS_INCOMPLETE_TYPES.has(play.typeText)) kind = 'pass-incomplete'
+    if (!kind) return []
+
+    const realEndPct = fieldPct(play.endYardsToEndzone, play.endTeamId, possessionTeamId)
+    const endPct =
+      kind === 'pass-incomplete'
+        ? clampPct(startPct + incompleteDepthYards(play.text))
+        : realEndPct ?? startPct
+
+    const dist = Math.abs(endPct - startPct)
+    const peakDepth = Math.min(0.95, BALL_DEPTH + 0.22 + dist / 250)
+
+    return [
+      {
+        kind,
+        start: project(startPct, BALL_DEPTH),
+        end: project(endPct, BALL_DEPTH),
+        peak: kind === 'rush' ? null : project((startPct + endPct) / 2, peakDepth),
+        opacity: 1, // recency-scaled below
+      },
+    ]
+  })
+
+  return drawable.map((play, i) => ({
+    ...play,
+    opacity: drawable.length <= 1 ? 1 : 0.35 + 0.65 * (i / (drawable.length - 1)),
+  }))
+}
+
 export function FieldPosition({
   possessionTeam,
   possessionTeamId,
   yardsToEndzone,
   downDistanceText,
-  lastPlay,
+  drivePlays,
 }: {
   possessionTeam: FieldTeam | null
   possessionTeamId: string | null
   yardsToEndzone: number | null
   downDistanceText: string | null
-  lastPlay: GamePlay | null
+  drivePlays: GamePlay[]
 }) {
   if (yardsToEndzone == null) return null
 
   const ballPct = clampPct(100 - yardsToEndzone)
   const markerColor = possessionTeam ? `#${possessionTeam.color || '2a78d6'}` : '#2a78d6'
 
-  const startPct = lastPlay
-    ? fieldPct(lastPlay.startYardsToEndzone, lastPlay.startTeamId, possessionTeamId)
-    : null
-
-  let playOverlay: 'rush' | 'pass-complete' | 'pass-incomplete' | null = null
-  if (lastPlay && startPct != null) {
-    if (RUSH_TYPES.has(lastPlay.typeText)) playOverlay = 'rush'
-    else if (PASS_COMPLETE_TYPES.has(lastPlay.typeText)) playOverlay = 'pass-complete'
-    else if (PASS_INCOMPLETE_TYPES.has(lastPlay.typeText)) playOverlay = 'pass-incomplete'
-  }
-
-  const isIncomplete = playOverlay === 'pass-incomplete'
-  const endPct =
-    isIncomplete && lastPlay
-      ? clampPct((startPct ?? ballPct) + incompleteDepthYards(lastPlay.text))
-      : ballPct
-
   const ball = project(ballPct, BALL_DEPTH)
-  const start = startPct != null ? project(startPct, BALL_DEPTH) : null
-  const end = project(endPct, BALL_DEPTH)
-  // A thrown ball's peak reads as rising toward the far sideline (smaller
-  // depth-y, more compressed toward the horizon) rather than straight up.
-  const dist = startPct != null ? Math.abs(endPct - startPct) : 0
-  const peakDepth = Math.min(0.95, BALL_DEPTH + 0.22 + dist / 250)
-  const peak = startPct != null ? project((startPct + endPct) / 2, peakDepth) : null
+  const plays = buildDrawablePlays(drivePlays, possessionTeamId)
 
   const nearLeft = project(0, 0)
   const nearRight = project(100, 0)
@@ -305,50 +334,55 @@ export function FieldPosition({
             fill="url(#fp-apron)"
           />
 
-          {/* Last-play trajectory */}
-          {start && playOverlay === 'rush' && (
-            <line
-              x1={start.x}
-              y1={start.y}
-              x2={end.x}
-              y2={end.y}
-              stroke={markerColor}
-              strokeWidth={1}
-              strokeLinecap="round"
-            />
-          )}
+          {/* Every play of the current drive so far - older plays fade out a
+              bit so the most recent one still reads as "where we are now". */}
+          {plays.map((play, i) => (
+            <g key={i} opacity={play.opacity}>
+              {play.kind === 'rush' && (
+                <line
+                  x1={play.start.x}
+                  y1={play.start.y}
+                  x2={play.end.x}
+                  y2={play.end.y}
+                  stroke={markerColor}
+                  strokeWidth={1}
+                  strokeLinecap="round"
+                />
+              )}
 
-          {start && peak && playOverlay === 'pass-complete' && (
-            <path
-              d={`M ${start.x} ${start.y} Q ${peak.x} ${peak.y} ${end.x} ${end.y}`}
-              fill="none"
-              stroke={markerColor}
-              strokeWidth={0.8}
-              strokeDasharray="1.8,1.6"
-              strokeLinecap="round"
-            />
-          )}
+              {play.kind === 'pass-complete' && play.peak && (
+                <path
+                  d={`M ${play.start.x} ${play.start.y} Q ${play.peak.x} ${play.peak.y} ${play.end.x} ${play.end.y}`}
+                  fill="none"
+                  stroke={markerColor}
+                  strokeWidth={0.8}
+                  strokeDasharray="1.8,1.6"
+                  strokeLinecap="round"
+                />
+              )}
 
-          {start && peak && isIncomplete && (
-            <>
-              <path
-                d={`M ${start.x} ${start.y} Q ${peak.x} ${peak.y} ${end.x} ${end.y}`}
-                fill="none"
-                stroke="rgba(255,255,255,0.9)"
-                strokeWidth={0.8}
-                strokeDasharray="1.8,1.6"
-                strokeLinecap="round"
-              />
-              <path
-                d={`M ${end.x - 1.8} ${end.y - 1.8} L ${end.x + 1.8} ${end.y + 1.8} M ${end.x - 1.8} ${end.y + 1.8} L ${end.x + 1.8} ${end.y - 1.8}`}
-                stroke="#e5484d"
-                strokeWidth={1}
-                strokeLinecap="round"
-              />
-            </>
-          )}
+              {play.kind === 'pass-incomplete' && play.peak && (
+                <>
+                  <path
+                    d={`M ${play.start.x} ${play.start.y} Q ${play.peak.x} ${play.peak.y} ${play.end.x} ${play.end.y}`}
+                    fill="none"
+                    stroke="rgba(255,255,255,0.9)"
+                    strokeWidth={0.8}
+                    strokeDasharray="1.8,1.6"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d={`M ${play.end.x - 1.8} ${play.end.y - 1.8} L ${play.end.x + 1.8} ${play.end.y + 1.8} M ${play.end.x - 1.8} ${play.end.y + 1.8} L ${play.end.x + 1.8} ${play.end.y - 1.8}`}
+                    stroke="#e5484d"
+                    strokeWidth={1}
+                    strokeLinecap="round"
+                  />
+                </>
+              )}
 
-          {start && <circle cx={start.x} cy={start.y} r={1} fill="rgba(255,255,255,0.65)" />}
+              <circle cx={play.start.x} cy={play.start.y} r={1} fill="rgba(255,255,255,0.65)" />
+            </g>
+          ))}
         </svg>
         <div
           className="absolute flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white shadow-lg"

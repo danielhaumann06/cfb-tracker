@@ -135,7 +135,7 @@ export function GameCastLive({
             possessionTeamId={drivePlays.possessionTeamId}
             yardsToEndzone={drivePlays.yardsToEndzone}
             downDistanceText={drivePlays.downDistanceText}
-            lastPlay={drivePlays.plays[0] ?? null}
+            drivePlays={drivePlays.currentDrivePlays}
           />
           <LivePlayFeed plays={drivePlays.plays} />
         </>
