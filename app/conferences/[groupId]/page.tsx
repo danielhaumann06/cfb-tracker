@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { ConferenceTicker } from '@/components/ConferenceTicker'
 import { ConferenceSchedule } from '@/components/ConferenceSchedule'
 import { ConferenceOddsTracker } from '@/components/ConferenceOddsTracker'
+import { PlayoffOddsTracker } from '@/components/PlayoffOddsTracker'
 import { ConferenceLayoutMenu } from '@/components/ConferenceLayoutMenu'
 import { WinLossRaceChart } from '@/components/WinLossRaceChart'
 import { RankingList } from '@/components/RankingList'
@@ -90,6 +91,12 @@ export default async function ConferenceBreakdownPage({
     logo: t.logo,
     probWinConference: fpiByTeam[i]?.probWinConference ?? null,
   }))
+  const playoffOddsRows = teams.map((t, i) => ({
+    slug: slugById.get(t.id) ?? t.id,
+    name: t.name,
+    logo: t.logo,
+    probMakePlayoffs: fpiByTeam[i]?.probMakePlayoffs ?? null,
+  }))
 
   const sections: Record<(typeof sectionOrder)[number], ReactNode> = {
     ticker: (
@@ -121,6 +128,11 @@ export default async function ConferenceBreakdownPage({
           conferenceName={conferenceName}
           teams={oddsRows}
         />
+      </div>
+    ),
+    playoffOdds: (
+      <div className="mt-6">
+        <PlayoffOddsTracker teams={playoffOddsRows} />
       </div>
     ),
     raceChart: (
