@@ -9,13 +9,22 @@ export default async function PollsPage() {
     getPollTimeline(POLL_IDS.cfp),
   ])
 
+  // Once the season's first CFP ranking is out it leads the page, until the
+  // next season starts (July) and AP/Coaches move back to the top.
+  const cfpReleased = cfp.weekLabels.length > 0
+
   return (
     <main className="mx-auto w-full min-w-0 max-w-2xl px-4 py-8 sm:px-6">
       <AutoRefresh />
       <h1 className="text-2xl font-semibold">Polls</h1>
       <p className="mt-1 text-[var(--text-secondary)]">
-        AP, Coaches, and CFP rankings, with each team&rsquo;s rank by week.
+        {cfpReleased ? 'CFP, AP, and Coaches' : 'AP, Coaches, and CFP'}{' '}
+        rankings, with each team&rsquo;s rank by week.
       </p>
+
+      {cfpReleased && (
+        <PollCard title={cfp.pollName || 'CFP Rankings'} timeline={cfp} />
+      )}
 
       <PollCard title={ap.pollName || 'AP Top 25'} timeline={ap} />
       <PollCard
@@ -23,9 +32,7 @@ export default async function PollsPage() {
         timeline={coaches}
       />
 
-      {cfp.weekLabels.length > 0 ? (
-        <PollCard title={cfp.pollName || 'CFP Rankings'} timeline={cfp} />
-      ) : (
+      {!cfpReleased && (
         <section className="mt-6 rounded-xl border border-[var(--border-hairline)] bg-[var(--surface-1)] p-5 text-sm text-[var(--text-muted)] shadow-[var(--shadow-card)]">
           CFP Rankings haven&rsquo;t been released yet this season. They
           typically begin in early November.
